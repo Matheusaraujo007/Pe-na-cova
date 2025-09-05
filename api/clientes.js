@@ -12,7 +12,7 @@ export default async function handler(req, res) {
   try {
     if (req.method === 'GET') {
       const result = await client.query('SELECT * FROM clientes ORDER BY id DESC');
-      res.status(200).json(result.rows);
+      return res.status(200).json(result.rows);
     }
 
     if (req.method === 'POST') {
@@ -21,11 +21,13 @@ export default async function handler(req, res) {
         'INSERT INTO clientes (nome, telefone, endereco, observacoes) VALUES ($1, $2, $3, $4) RETURNING *',
         [nome, telefone, endereco, observacoes]
       );
-      res.status(201).json(result.rows[0]);
+      return res.status(201).json(result.rows[0]);
     }
+
+    return res.status(405).json({ error: 'Método não permitido' });
   } catch (error) {
     console.error('Erro na API:', error);
-    res.status(500).json({ error: 'Erro no servidor: ' + error.message });
+    return res.status(500).json({ error: 'Erro no servidor: ' + error.message });
   } finally {
     client.release();
   }
