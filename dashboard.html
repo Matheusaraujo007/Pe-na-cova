@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📊 Controle de Vendas</title>
+<style>
+:root {
+  --primary: #2f7fb3;
+  --primary-hover: #25658d;
+  --danger: #dc2626;
+  --background: #f4f7fb;
+  --card-bg: #fff;
+  --text-dark: #333;
+  --border-color: #ddd;
+}
+body { font-family: "Segoe UI", Arial, sans-serif; background: var(--background); margin: 0; padding: 20px; color: var(--text-dark); }
+h1 { text-align: center; color: var(--primary); margin-bottom: 25px; }
+.container { max-width: 1200px; margin: 0 auto; background: var(--card-bg); padding: 25px; border-radius: 14px; box-shadow: 0px 6px 18px rgba(0,0,0,0.08); }
+.filters { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
+.filters input, .filters select { padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 14px; }
+button { padding: 10px 18px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+button:hover { background: var(--primary-hover); }
+table { width: 100%; border-collapse: collapse; border-radius: 12px; overflow: hidden; }
+th, td { padding: 12px 15px; border-bottom: 1px solid var(--border-color); text-align: left; }
+th { background: var(--primary); color: white; }
+tr:nth-child(even) { background: #f9fcff; }
+tr:hover { background: #e9f3fa; }
+.action-btn { padding: 6px 10px; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; color: white; transition: 0.2s; }
+.remove-btn { background: var(--danger); } .remove-btn:hover { background: #b02a37; }
+.total { text-align: right; font-weight: bold; margin-top: 10px; }
+.back { text-align: center; margin-top: 20px; }
+.back a { color: var(--primary); text-decoration: none; font-size: 15px; font-weight: bold; }
+.back a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<h1>📊 Controle de Vendas</h1>
+
+<div class="container">
+
+  <div class="filters">
+    <input type="date" id="filtroData">
+    <input type="text" id="filtroCliente" placeholder="Filtrar por cliente">
+    <input type="text" id="filtroProduto" placeholder="Filtrar por produto">
+    <button id="btnFiltrar">Filtrar</button>
+    <button id="btnLimpar">Limpar</button>
+  </div>
+
+  <table id="tabelaVendas">
+    <thead>
+      <tr>
+        <th>Data</th>
+        <th>Cliente</th>
+        <th>Produtos</th>
+        <th>Total</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <div class="total">Total Geral: R$ <span id="totalGeral">0.00</span></div>
+
+</div>
+
+<div class="back"><a href="painel.html">⬅ Voltar ao Painel</a></div>
+
+<script>
+// Dados simulados de vendas no localStorage
+let vendas = JSON.parse(localStorage.getItem("vendas")) || [];
+
+// --- Função para renderizar tabela ---
+function renderTabela(lista){
+  const tbody = document.getElementById("tabelaVendas").querySelector("tbody");
+  tbody.innerHTML = "";
+  let totalGeral = 0;
+  lista.forEach((venda, idx)=>{
+    totalGeral += venda.total;
+    const produtosStr = venda.produtos.map(p=>`${p.descricao} (${p.tamanho}) x${p.quantidade}`).join(", ");
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${venda.data}</td>
+      <td>${venda.cliente}</td>
+      <td>${produtosStr}</td>
+      <td>R$ ${venda.total.toFixed(2)}</td>
+      <td><button class="action-btn remove-btn" onclick="removerVenda(${idx})">Remover</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+  document.getElementById("totalGeral").textContent = totalGeral.toFixed(2);
+}
+
+// --- Remover venda ---
+function removerVenda(idx){
+  if(!confirm("Deseja realmente remover esta venda?")) return;
+  vendas.splice(idx,1);
+  localStorage.setItem("vendas", JSON.stringify(vendas));
+  renderTabela(vendas);
+}
+
+// --- Filtros ---
+document.getElementById("btnFiltrar").addEventListener("click", ()=>{
+  const data = document.getElementById("filtroData").value;
+  const cliente = document.getElementById("filtroCliente").value.toLowerCase();
+  const produto = document.getElementById("filtroProduto").value.toLowerCase();
+
+  const filtradas = vendas.filter(v=>{
+    let cond = true;
+    if(data) cond = cond && v.data===data;
+    if(cliente) cond = cond && v.cliente.toLowerCase().includes(cliente);
+    if(produto) cond = cond && v.produtos.some(p=>p.descricao.toLowerCase().includes(produto));
+    return cond;
+  });
+  renderTabela(filtradas);
+});
+
+// --- Limpar filtros ---
+document.getElementById("btnLimpar").addEventListener("click", ()=>{
+  document.getElementById("filtroData").value = "";
+  document.getElementById("filtroCliente").value = "";
+  document.getElementById("filtroProduto").value = "";
+  renderTabela(vendas);
+});
+
+// Inicializar
+renderTabela(vendas);
+</script>
+</body>
+</html>

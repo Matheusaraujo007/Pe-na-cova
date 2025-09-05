@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📑 Contas a Receber</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+    .container {
+      max-width: 800px;
+      margin: auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    table th, table td {
+      padding: 10px;
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+    table th {
+      background: #007bff;
+      color: #fff;
+    }
+    .btn {
+      padding: 6px 12px;
+      background: #28a745;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .btn:hover {
+      background: #218838;
+    }
+    .btn-danger {
+      background: #dc3545;
+    }
+    .btn-danger:hover {
+      background: #b02a37;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>📑 Contas a Receber (Fiado)</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Cliente</th>
+          <th>Data</th>
+          <th>Valor</th>
+          <th>Status</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody id="tabelaFiados">
+        <!-- Fiados serão listados aqui -->
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    // Busca os fiados salvos no localStorage
+    let fiados = JSON.parse(localStorage.getItem("contasFiado")) || [];
+
+    function carregarFiados() {
+      let tabela = document.getElementById("tabelaFiados");
+      tabela.innerHTML = "";
+
+      if (fiados.length === 0) {
+        tabela.innerHTML = `<tr><td colspan="5">Nenhum fiado pendente</td></tr>`;
+        return;
+      }
+
+      fiados.forEach((fiado, index) => {
+        let row = `
+          <tr>
+            <td>${fiado.cliente}</td>
+            <td>${fiado.data}</td>
+            <td>R$ ${parseFloat(fiado.valor).toFixed(2)}</td>
+            <td>${fiado.status}</td>
+            <td>
+              <button class="btn" onclick="marcarPago(${index})">Marcar Pago</button>
+              <button class="btn btn-danger" onclick="remover(${index})">Remover</button>
+            </td>
+          </tr>
+        `;
+        tabela.innerHTML += row;
+      });
+    }
+
+    function marcarPago(index) {
+      fiados[index].status = "Pago";
+      salvar();
+      carregarFiados();
+    }
+
+    function remover(index) {
+      fiados.splice(index, 1);
+      salvar();
+      carregarFiados();
+    }
+
+    function salvar() {
+      localStorage.setItem("contasFiado", JSON.stringify(fiados));
+    }
+
+    carregarFiados();
+  </script>
+</body>
+</html>
