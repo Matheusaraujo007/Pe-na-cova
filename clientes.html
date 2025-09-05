@@ -115,7 +115,7 @@
 
     async function salvarCliente(cliente) {
       try {
-        const res = await fetch("/api/clientes", {
+        const res = await fetch("/api/clientes.js", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(cliente)
