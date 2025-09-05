@@ -1,4 +1,5 @@
-import pkg from "pg";
+// /api/clientes.js
+import pkg from 'pg';
 const { Pool } = pkg;
 
 const pool = new Pool({
@@ -7,32 +8,36 @@ const pool = new Pool({
 });
 
 export default async function handler(req, res) {
+  const client = await pool.connect();
+
   try {
-    const { method } = req;
-
-    if (method === "GET") {
-      const result = await pool.query("SELECT * FROM clientes ORDER BY id DESC");
-      return res.status(200).json(result.rows);
-    }
-
-    if (method === "POST") {
+    if (req.method === 'GET') {
+      const result = await client.query('SELECT * FROM clientes ORDER BY id DESC');
+      res.status(200).json(result.rows);
+    } else if (req.method === 'POST') {
       const { nome, telefone, endereco, observacoes } = req.body;
       if (!nome || !telefone || !endereco) {
-        return res.status(400).json({ error: "Nome, telefone e endereço são obrigatórios" });
+        res.status(400).json({ error: 'Nome, telefone e endereço são obrigatórios' });
+        return;
       }
 
-      const result = await pool.query(
-        "INSERT INTO clientes (nome, telefone, endereco, observacoes) VALUES ($1,$2,$3,$4) RETURNING *",
-        [nome, telefone, endereco, observacoes]
-      );
-      return res.status(201).json(result.rows[0]);
+      const insertQuery = `
+        INSERT INTO clientes (nome, telefone, endereco, observacoes)
+        VALUES ($1, $2, $3, $4)
+        RETURNING *;
+      `;
+      const values = [nome, telefone, endereco, observacoes || ''];
+
+      const result = await client.query(insertQuery, values);
+      res.status(201).json(result.rows[0]);
+    } else {
+      res.setHeader('Allow', ['GET', 'POST']);
+      res.status(405).json({ error: `Método ${req.method} não permitido` });
     }
-
-    // Método não permitido
-    return res.status(405).json({ error: "Método não permitido" });
-
-  } catch (err) {
-    console.error("API Clientes:", err);
-    return res.status(500).json({ error: "Erro interno no servidor" });
+  } catch (error) {
+    console.error("Erro na API clientes:", error.message);
+    res.status(500).json({ error: "Erro interno do servidor" });
+  } finally {
+    client.release();
   }
 }
