@@ -78,17 +78,12 @@ async function finalizarRecebimento(){
 
     alert("Venda finalizada com sucesso!");
 
-    // Pergunta se deseja imprimir nota
-    if(confirm("Deseja imprimir a nota da venda?")){
-      gerarPDF();
-    }
+    // Gera PDF da nota e redireciona automaticamente
+    gerarPDF();
 
     // Limpa localStorage
     localStorage.removeItem("vendaAtual");
     localStorage.removeItem("carrinhoAtual");
-
-    // Redireciona para PDV
-    window.location.href = "pdv.html";
 
   } catch (err) {
     alert("Erro: " + err.message);
@@ -129,7 +124,11 @@ function gerarPDF(){
   doc.setFont(undefined, "bold");
   doc.text(`Total: R$ ${venda.total.toFixed(2)}`, 150, startY+10);
 
+  // Salva PDF
   doc.save(`nota_${venda.cliente}_${Date.now()}.pdf`);
+
+  // Redireciona automaticamente para PDV
+  window.location.href = "vendas.html";
 }
 </script>
 
