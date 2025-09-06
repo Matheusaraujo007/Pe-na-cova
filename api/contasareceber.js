@@ -9,26 +9,26 @@ const pool = new Pool({
 
 // Função auxiliar para queries
 async function query(sql, params = []) {
-  const client = await pool.connect();
-  try {
-    const result = await client.query(sql, params);
-    return result;
-  } finally {
-    client.release();
-  }
+  const result = await pool.query(sql, params); // usamos pool.query direto
+  return result;
 }
 
 // Handler principal
 export default async function handler(req, res) {
-  const { method, body, query: params } = req;
+  const { method, body } = req;
 
   try {
     // ---------------- GET: Listar todas as contas ----------------
     if (method === "GET") {
       const result = await query(`
-        SELECT c.id, cl.nome as cliente, c.valor, c.status, c.data
+        SELECT 
+          c.id, 
+          COALESCE(cl.nome, 'Cliente não encontrado') AS cliente, 
+          c.valor, 
+          c.status, 
+          to_char(c.data, 'DD/MM/YYYY') AS data
         FROM contasareceber c
-        INNER JOIN clientes cl ON c.cliente_id = cl.id
+        LEFT JOIN clientes cl ON c.cliente_id = cl.id
         ORDER BY c.id DESC
       `);
       return res.status(200).json(result.rows);
@@ -40,6 +40,7 @@ export default async function handler(req, res) {
       if (!cliente_id || valor == null) {
         return res.status(400).json({ error: "Cliente e valor são obrigatórios" });
       }
+
       const result = await query(
         "INSERT INTO contasareceber (cliente_id, valor, status, data) VALUES ($1,$2,$3,NOW()) RETURNING *",
         [cliente_id, valor, status || "Pendente"]
@@ -63,7 +64,7 @@ export default async function handler(req, res) {
     // ---------------- Método não permitido ----------------
     return res.status(405).json({ error: "Método não permitido" });
   } catch (err) {
-    console.error("Erro na API de contas a receber:", err);
+    console.error("Erro na API de contas a receber:", err.message, err.stack);
     return res.status(500).json({ error: "Erro interno no servidor" });
   }
 }
