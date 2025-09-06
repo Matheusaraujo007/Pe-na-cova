@@ -55,10 +55,14 @@
         fiados.forEach((fiado) => {
           const row = document.createElement("tr");
 
-          // Use "cliente" pois a API retorna assim
+          // Corrigindo a data para exibir corretamente
+          const dataFormatada = fiado.data
+            ? new Date(fiado.data + "T00:00:00").toLocaleDateString("pt-BR")
+            : '-';
+
           row.innerHTML = `
             <td>${fiado.cliente || 'Cliente não encontrado'}</td>
-            <td>${fiado.data ? new Date(fiado.data).toLocaleDateString("pt-BR") : '-'}</td>
+            <td>${dataFormatada}</td>
             <td>R$ ${parseFloat(fiado.valor).toFixed(2)}</td>
             <td>${fiado.status}</td>
             <td>
