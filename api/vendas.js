@@ -80,7 +80,7 @@ export default async function handler(req, res) {
         for (const item of itens) {
           await query(
             "INSERT INTO vendas_itens (venda_id, produto_id, quantidade, preco) VALUES ($1,$2,$3,$4)",
-            [venda.id, item.produto_id, item.quantidade, item.preco]
+            [venda.id, item.produto_id, item.quantidade, item.preco, item.tamanho]
           );
           // Atualizar estoque do produto
           await query(
