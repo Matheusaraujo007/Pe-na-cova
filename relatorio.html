@@ -68,8 +68,19 @@ tr:hover { background: #e9f3fa; }
 <div class="back"><a href="painel.html">⬅ Voltar ao Painel</a></div>
 
 <script>
-// --- Dados de vendas ---
-let vendas = JSON.parse(localStorage.getItem("vendas")) || [];
+let vendas = []; // vai armazenar os dados da API
+
+// --- Buscar dados do banco via API ---
+async function buscarVendas() {
+  try {
+    const res = await fetch("/api/vendas"); // ajuste a rota da sua API
+    if (!res.ok) throw new Error("Erro ao buscar vendas do banco");
+    vendas = await res.json();
+    gerarRelatorio();
+  } catch (err) {
+    alert(err.message);
+  }
+}
 
 // --- Gerar relatório ---
 function gerarRelatorio(){
@@ -84,7 +95,6 @@ function gerarRelatorio(){
   tbody.innerHTML = "";
 
   vendas.forEach(venda=>{
-    // Filtros
     if(inicio && venda.data<inicio) return;
     if(fim && venda.data>fim) return;
     if(clienteFiltro && !venda.cliente.toLowerCase().includes(clienteFiltro)) return;
@@ -122,7 +132,7 @@ document.getElementById("btnLimpar").addEventListener("click", ()=>{
 });
 
 // Inicializar
-gerarRelatorio();
+buscarVendas();
 </script>
 </body>
 </html>
