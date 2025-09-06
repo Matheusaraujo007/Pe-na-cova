@@ -39,14 +39,14 @@
   <script>
     const API_BASE = "/api"; // Ajuste se necessário
 
-    // Função para formatar a data corretamente
-    function formatarData(data) {
-      if (!data) return '-';
-      const d = new Date(data);
-      if (isNaN(d)) return '-'; // caso a data seja inválida
-      const dia = String(d.getDate()).padStart(2, '0');
-      const mes = String(d.getMonth() + 1).padStart(2, '0');
-      const ano = d.getFullYear();
+    // Função para formatar datas do tipo "YYYY-MM-DD" ou "YYYY-MM-DDTHH:MM:SS"
+    function formatarData(dataStr) {
+      if (!dataStr) return '-';
+      const partes = dataStr.split('T')[0].split('-'); // Remove hora e separa ano, mês, dia
+      if (partes.length !== 3) return '-';
+      const ano = partes[0];
+      const mes = partes[1];
+      const dia = partes[2];
       return `${dia}/${mes}/${ano}`;
     }
 
@@ -65,7 +65,6 @@
         tabela.innerHTML = "";
         fiados.forEach((fiado) => {
           const row = document.createElement("tr");
-
           const dataFormatada = formatarData(fiado.data);
 
           row.innerHTML = `
