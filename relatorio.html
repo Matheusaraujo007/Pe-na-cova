@@ -68,12 +68,12 @@ tr:hover { background: #e9f3fa; }
 <div class="back"><a href="painel.html">⬅ Voltar ao Painel</a></div>
 
 <script>
-let vendas = []; // vai armazenar os dados da API
+let vendas = [];
 
 // --- Buscar dados do banco via API ---
 async function buscarVendas() {
   try {
-    const res = await fetch("/api/vendas"); // ajuste a rota da sua API
+    const res = await fetch("/api/vendas"); // ajuste conforme sua rota
     if (!res.ok) throw new Error("Erro ao buscar vendas do banco");
     vendas = await res.json();
     gerarRelatorio();
@@ -82,8 +82,8 @@ async function buscarVendas() {
   }
 }
 
-// --- Gerar relatório ---
-function gerarRelatorio(){
+// --- Gerar relatório com filtros ---
+function gerarRelatorio() {
   const inicio = document.getElementById("dataInicio").value;
   const fim = document.getElementById("dataFim").value;
   const clienteFiltro = document.getElementById("filtroCliente").value.toLowerCase();
@@ -94,24 +94,28 @@ function gerarRelatorio(){
   const tbody = document.getElementById("tabelaRelatorios").querySelector("tbody");
   tbody.innerHTML = "";
 
-  vendas.forEach(venda=>{
-    if(inicio && venda.data<inicio) return;
-    if(fim && venda.data>fim) return;
-    if(clienteFiltro && !venda.cliente.toLowerCase().includes(clienteFiltro)) return;
+  vendas.forEach(venda => {
+    // Filtros
+    if (inicio && venda.data < inicio) return;
+    if (fim && venda.data > fim) return;
+    if (clienteFiltro && !venda.cliente.toLowerCase().includes(clienteFiltro)) return;
 
-    venda.produtos.forEach(p=>{
-      if(produtoFiltro && !p.descricao.toLowerCase().includes(produtoFiltro)) return;
-      totalGeral += p.subtotal;
-      totalProdutos += p.quantidade;
+    // Proteção contra produtos indefinidos
+    const produtos = venda.produtos || [];
+    produtos.forEach(p => {
+      if (produtoFiltro && !p.descricao.toLowerCase().includes(produtoFiltro)) return;
+
+      totalGeral += p.subtotal || 0;
+      totalProdutos += p.quantidade || 0;
 
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td>${venda.data}</td>
-        <td>${venda.cliente}</td>
-        <td>${p.descricao}</td>
-        <td>${p.tamanho}</td>
-        <td>${p.quantidade}</td>
-        <td>R$ ${p.subtotal.toFixed(2)}</td>
+        <td>${venda.data || '-'}</td>
+        <td>${venda.cliente || '-'}</td>
+        <td>${p.descricao || '-'}</td>
+        <td>${p.tamanho || '-'}</td>
+        <td>${p.quantidade || 0}</td>
+        <td>R$ ${p.subtotal ? p.subtotal.toFixed(2) : '0.00'}</td>
       `;
       tbody.appendChild(tr);
     });
@@ -123,11 +127,11 @@ function gerarRelatorio(){
 
 // --- Eventos ---
 document.getElementById("btnGerar").addEventListener("click", gerarRelatorio);
-document.getElementById("btnLimpar").addEventListener("click", ()=>{
-  document.getElementById("dataInicio").value="";
-  document.getElementById("dataFim").value="";
-  document.getElementById("filtroCliente").value="";
-  document.getElementById("filtroProduto").value="";
+document.getElementById("btnLimpar").addEventListener("click", () => {
+  document.getElementById("dataInicio").value = "";
+  document.getElementById("dataFim").value = "";
+  document.getElementById("filtroCliente").value = "";
+  document.getElementById("filtroProduto").value = "";
   gerarRelatorio();
 });
 
