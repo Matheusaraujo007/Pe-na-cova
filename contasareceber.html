@@ -37,7 +37,7 @@
   </div>
 
   <script>
-    const API_BASE = "/api"; // Ajuste caso sua API esteja em outro caminho
+    const API_BASE = "/api"; // Ajuste se necessário
 
     async function carregarFiados() {
       const tabela = document.getElementById("tabelaFiados");
@@ -55,9 +55,10 @@
         fiados.forEach((fiado) => {
           const row = document.createElement("tr");
 
+          // Use "cliente" pois a API retorna assim
           row.innerHTML = `
-            <td>${fiado.cliente_nome}</td>
-            <td>${new Date(fiado.data || fiado.created_at).toLocaleDateString("pt-BR")}</td>
+            <td>${fiado.cliente || 'Cliente não encontrado'}</td>
+            <td>${fiado.data ? new Date(fiado.data).toLocaleDateString("pt-BR") : '-'}</td>
             <td>R$ ${parseFloat(fiado.valor).toFixed(2)}</td>
             <td>${fiado.status}</td>
             <td>
@@ -75,10 +76,10 @@
 
     async function marcarPago(id) {
       try {
-        const res = await fetch(`${API_BASE}/contasareceber/${id}`, {
+        const res = await fetch(`${API_BASE}/contasareceber`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: "Pago" })
+          body: JSON.stringify({ id, status: "Pago" })
         });
         if (!res.ok) throw new Error("Erro ao atualizar status");
         carregarFiados();
