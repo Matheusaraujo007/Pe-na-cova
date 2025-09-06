@@ -39,6 +39,17 @@
   <script>
     const API_BASE = "/api"; // Ajuste se necessário
 
+    // Função para formatar a data corretamente
+    function formatarData(data) {
+      if (!data) return '-';
+      const d = new Date(data);
+      if (isNaN(d)) return '-'; // caso a data seja inválida
+      const dia = String(d.getDate()).padStart(2, '0');
+      const mes = String(d.getMonth() + 1).padStart(2, '0');
+      const ano = d.getFullYear();
+      return `${dia}/${mes}/${ano}`;
+    }
+
     async function carregarFiados() {
       const tabela = document.getElementById("tabelaFiados");
       try {
@@ -55,10 +66,7 @@
         fiados.forEach((fiado) => {
           const row = document.createElement("tr");
 
-          // Corrigindo a data para exibir corretamente
-          const dataFormatada = fiado.data
-            ? new Date(fiado.data + "T00:00:00").toLocaleDateString("pt-BR")
-            : '-';
+          const dataFormatada = formatarData(fiado.data);
 
           row.innerHTML = `
             <td>${fiado.cliente || 'Cliente não encontrado'}</td>
