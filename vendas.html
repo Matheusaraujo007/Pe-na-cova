@@ -181,11 +181,15 @@ produtoInput.addEventListener("change", ()=>{
   const prod = produtoInput.value;
   tamanhoSelect.innerHTML = "<option value=''>Selecione Tamanho</option>";
   if(!prod) return;
-  const tamanhos = estoque.filter(p=>p.descricao===prod).map(p=>p.tamanho);
-  tamanhos.forEach(t=>{
+
+  // Filtra produtos com a mesma descrição
+  const produtosFiltrados = estoque.filter(p=>p.descricao===prod);
+
+  // Preenche os tamanhos disponíveis
+  produtosFiltrados.forEach(p=>{
     const opt = document.createElement("option");
-    opt.value = t;
-    opt.textContent = t;
+    opt.value = p.tamanho;
+    opt.textContent = `${p.tamanho} (Disponível: ${p.quantidade})`;
     tamanhoSelect.appendChild(opt);
   });
 });
@@ -238,6 +242,7 @@ function removerItem(idx){
   showAlert("Item removido do carrinho!");
 }
 
+// ---------- Finalizar Venda ----------
 document.getElementById("finalizarVenda").addEventListener("click", async ()=>{
   if(carrinho.length===0) return alert("Carrinho vazio!");
   const clienteTexto = clienteInput.value.trim();
@@ -248,7 +253,7 @@ document.getElementById("finalizarVenda").addEventListener("click", async ()=>{
   const total = carrinho.reduce((acc,i)=>acc+i.subtotal,0);
 
   try {
-    // 1. Salvar venda no banco (você já tem sua API)
+    // 1️⃣ Salvar venda no banco
     const resVenda = await fetch(`${API_BASE}/vendas`, {
       method:"POST",
       headers:{"Content-Type":"application/json"},
@@ -264,7 +269,7 @@ document.getElementById("finalizarVenda").addEventListener("click", async ()=>{
     });
     if(!resVenda.ok) throw new Error("Erro ao salvar venda");
 
-    // 2. Atualizar estoque no banco
+    // 2️⃣ Atualizar estoque no banco
     for(const item of carrinho){
       const prod = estoque.find(p=>p.id===item.produto_id);
       if(prod){
@@ -277,14 +282,17 @@ document.getElementById("finalizarVenda").addEventListener("click", async ()=>{
       }
     }
 
-    // 3. Limpar carrinho local
+    // 3️⃣ Limpar carrinho local
+    carrinho = [];
+    renderTabela();
     localStorage.removeItem("carrinhoAtual");
     localStorage.removeItem("vendaAtual");
     showAlert("Venda finalizada com sucesso!");
-    // redireciona
-    window.location.href="recebimentos.html";
 
-  } catch(err) {
+    // Redireciona para recebimentos
+    setTimeout(()=>{ window.location.href="recebimentos.html"; }, 1000);
+
+  } catch(err){
     console.error(err);
     alert(err.message);
   }
