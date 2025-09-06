@@ -181,15 +181,11 @@ produtoInput.addEventListener("change", ()=>{
   const prod = produtoInput.value;
   tamanhoSelect.innerHTML = "<option value=''>Selecione Tamanho</option>";
   if(!prod) return;
-
-  // Filtra produtos com a mesma descrição
-  const produtosFiltrados = estoque.filter(p=>p.descricao===prod);
-
-  // Preenche os tamanhos disponíveis
-  produtosFiltrados.forEach(p=>{
+  const tamanhos = estoque.filter(p=>p.descricao===prod).map(p=>p.tamanho);
+  tamanhos.forEach(t=>{
     const opt = document.createElement("option");
-    opt.value = p.tamanho;
-    opt.textContent = `${p.tamanho} (Disponível: ${p.quantidade})`;
+    opt.value = t;
+    opt.textContent = t;
     tamanhoSelect.appendChild(opt);
   });
 });
@@ -243,7 +239,7 @@ function removerItem(idx){
 }
 
 // ---------- Finalizar Venda ----------
-document.getElementById("finalizarVenda").addEventListener("click", async ()=>{
+document.getElementById("finalizarVenda").addEventListener("click", ()=>{
   if(carrinho.length===0) return alert("Carrinho vazio!");
   const clienteTexto = clienteInput.value.trim();
   if(!clienteTexto) return alert("Selecione ou digite o cliente!");
@@ -252,50 +248,18 @@ document.getElementById("finalizarVenda").addEventListener("click", async ()=>{
 
   const total = carrinho.reduce((acc,i)=>acc+i.subtotal,0);
 
-  try {
-    // 1️⃣ Salvar venda no banco
-    const resVenda = await fetch(`${API_BASE}/vendas`, {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({
-        cliente_id: cliente.id,
-        total,
-        produtos: carrinho.map(item=>({
-          produto_id: item.produto_id,
-          quantidade: item.quantidade,
-          preco: item.preco
-        }))
-      })
-    });
-    if(!resVenda.ok) throw new Error("Erro ao salvar venda");
+  // Salva venda temporária no localStorage
+  const vendaAtual = {
+    cliente: cliente.nome,
+    cliente_id: cliente.id,
+    total,
+    itens: carrinho
+  };
+  localStorage.setItem("vendaAtual", JSON.stringify(vendaAtual));
+  localStorage.setItem("carrinhoAtual", JSON.stringify(carrinho));
 
-    // 2️⃣ Atualizar estoque no banco
-    for(const item of carrinho){
-      const prod = estoque.find(p=>p.id===item.produto_id);
-      if(prod){
-        const novaQtd = prod.quantidade; // já subtraímos no array local
-        await fetch(`${API_BASE}/produtos/${prod.id}`, {
-          method:"PUT",
-          headers:{"Content-Type":"application/json"},
-          body: JSON.stringify({ quantidade: novaQtd })
-        });
-      }
-    }
-
-    // 3️⃣ Limpar carrinho local
-    carrinho = [];
-    renderTabela();
-    localStorage.removeItem("carrinhoAtual");
-    localStorage.removeItem("vendaAtual");
-    showAlert("Venda finalizada com sucesso!");
-
-    // Redireciona para recebimentos
-    setTimeout(()=>{ window.location.href="recebimentos.html"; }, 1000);
-
-  } catch(err){
-    console.error(err);
-    alert(err.message);
-  }
+  // Redireciona para tela de Recebimento
+  window.location.href = "recebimento.html"; // ajuste o nome do arquivo
 });
 
 // ---------- Modal Cliente ----------
