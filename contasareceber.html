@@ -39,17 +39,13 @@
   <script>
     const API_BASE = "/api"; // Ajuste se necessário
 
-    // Função robusta para formatar qualquer timestamp da API
+    // Função robusta para formatar datas
     function formatarData(dataStr) {
       if (!dataStr) return '-';
-      // Remove a hora se existir
-      const dataSemHora = dataStr.split('T')[0];
+      const dataSemHora = dataStr.split('T')[0]; // remove hora
       const partes = dataSemHora.split('-'); // [YYYY, MM, DD]
       if (partes.length !== 3) return '-';
-      const ano = partes[0];
-      const mes = partes[1];
-      const dia = partes[2];
-      return `${dia}/${mes}/${ano}`;
+      return `${partes[2]}/${partes[1]}/${partes[0]}`; // DD/MM/YYYY
     }
 
     async function carregarFiados() {
@@ -67,7 +63,9 @@
         tabela.innerHTML = "";
         fiados.forEach((fiado) => {
           const row = document.createElement("tr");
-          const dataFormatada = formatarData(fiado.data);
+
+          // Usa 'data' ou 'created_at', dependendo do que a API retornar
+          const dataFormatada = formatarData(fiado.data || fiado.created_at);
 
           row.innerHTML = `
             <td>${fiado.cliente || 'Cliente não encontrado'}</td>
