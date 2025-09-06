@@ -30,6 +30,9 @@ tr:hover { background: #e9f3fa; }
 .back { text-align: center; margin-top: 20px; }
 .back a { color: var(--primary); text-decoration: none; font-size: 15px; font-weight: bold; }
 .back a:hover { text-decoration: underline; }
+@media print {
+  .filters, .back { display: none; }
+}
 </style>
 </head>
 <body>
@@ -43,6 +46,7 @@ tr:hover { background: #e9f3fa; }
     <input type="text" id="filtroProduto" placeholder="Produto">
     <button id="btnGerar">Gerar Relatório</button>
     <button id="btnLimpar">Limpar</button>
+    <button id="btnImprimir">Imprimir</button>
   </div>
 
   <table id="tabelaRelatorios">
@@ -72,8 +76,20 @@ let vendas = [];
 
 // --- Buscar dados do banco via API ---
 async function buscarVendas() {
+  const inicio = document.getElementById("dataInicio").value;
+  const fim = document.getElementById("dataFim").value;
+  const cliente = document.getElementById("filtroCliente").value;
+  const produto = document.getElementById("filtroProduto").value;
+
+  const params = new URLSearchParams({
+    dataInicio: inicio || '',
+    dataFim: fim || '',
+    cliente: cliente || '',
+    produto: produto || ''
+  });
+
   try {
-    const res = await fetch("/api/vendas"); // ajuste conforme sua rota
+    const res = await fetch(`/api/relatorio?${params.toString()}`);
     if (!res.ok) throw new Error("Erro ao buscar vendas do banco");
     vendas = await res.json();
     gerarRelatorio();
@@ -82,29 +98,16 @@ async function buscarVendas() {
   }
 }
 
-// --- Gerar relatório com filtros ---
+// --- Gerar relatório na tabela ---
 function gerarRelatorio() {
-  const inicio = document.getElementById("dataInicio").value;
-  const fim = document.getElementById("dataFim").value;
-  const clienteFiltro = document.getElementById("filtroCliente").value.toLowerCase();
-  const produtoFiltro = document.getElementById("filtroProduto").value.toLowerCase();
-
   let totalGeral = 0;
   let totalProdutos = 0;
   const tbody = document.getElementById("tabelaRelatorios").querySelector("tbody");
   tbody.innerHTML = "";
 
   vendas.forEach(venda => {
-    // Filtros
-    if (inicio && venda.data < inicio) return;
-    if (fim && venda.data > fim) return;
-    if (clienteFiltro && !venda.cliente.toLowerCase().includes(clienteFiltro)) return;
-
-    // Proteção contra produtos indefinidos
     const produtos = venda.produtos || [];
     produtos.forEach(p => {
-      if (produtoFiltro && !p.descricao.toLowerCase().includes(produtoFiltro)) return;
-
       totalGeral += p.subtotal || 0;
       totalProdutos += p.quantidade || 0;
 
@@ -126,14 +129,15 @@ function gerarRelatorio() {
 }
 
 // --- Eventos ---
-document.getElementById("btnGerar").addEventListener("click", gerarRelatorio);
+document.getElementById("btnGerar").addEventListener("click", buscarVendas);
 document.getElementById("btnLimpar").addEventListener("click", () => {
   document.getElementById("dataInicio").value = "";
   document.getElementById("dataFim").value = "";
   document.getElementById("filtroCliente").value = "";
   document.getElementById("filtroProduto").value = "";
-  gerarRelatorio();
+  buscarVendas();
 });
+document.getElementById("btnImprimir").addEventListener("click", () => window.print());
 
 // Inicializar
 buscarVendas();
