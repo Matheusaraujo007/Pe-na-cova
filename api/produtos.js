@@ -51,3 +51,15 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Erro no servidor: ' + error.message });
   }
 }
+// Atualizar estoque
+if (method === "PUT") {
+  const { id, quantidade } = body; // nova quantidade
+  if (!id || quantidade == null) {
+    return res.status(400).json({ error: "ID e quantidade são obrigatórios" });
+  }
+  const result = await query(
+    "UPDATE produtos SET quantidade = $1 WHERE id = $2 RETURNING *",
+    [quantidade, id]
+  );
+  return res.status(200).json(result.rows[0]);
+}
