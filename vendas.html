@@ -239,7 +239,7 @@ function removerItem(idx){
 }
 
 // ---------- Finalizar Venda ----------
-document.getElementById("finalizarVenda").addEventListener("click", async ()=>{
+document.getElementById("finalizarVenda").addEventListener("click", ()=>{
   if(carrinho.length===0) return alert("Carrinho vazio!");
   const clienteTexto = clienteInput.value.trim();
   if(!clienteTexto) return alert("Selecione ou digite o cliente!");
@@ -247,22 +247,19 @@ document.getElementById("finalizarVenda").addEventListener("click", async ()=>{
   if(!cliente) return alert("Cliente não encontrado!");
 
   const total = carrinho.reduce((acc,i)=>acc+i.subtotal,0);
-  const forma_pagamento = prompt("Informe forma de pagamento (Dinheiro, Cartão, Fiado):","Dinheiro");
-  if(!forma_pagamento) return;
 
-  const vendaBody = { cliente_id: cliente.id, itens: carrinho.map(c=>({ produto_id: c.produto_id, quantidade: c.quantidade, preco: c.preco })), total, forma_pagamento };
+  // Salva venda temporária no localStorage
+  const vendaAtual = {
+    cliente: cliente.nome,
+    cliente_id: cliente.id,
+    total,
+    itens: carrinho
+  };
+  localStorage.setItem("vendaAtual", JSON.stringify(vendaAtual));
+  localStorage.setItem("carrinhoAtual", JSON.stringify(carrinho));
 
-  try{
-    const res = await fetch(`${API_BASE}/vendas`, { method:"POST", headers: { "Content-Type":"application/json" }, body: JSON.stringify(vendaBody) });
-    if(!res.ok) throw new Error("Erro ao registrar venda");
-    carrinho=[];
-    await fetchProdutos();
-    renderTabela();
-    showAlert("Venda registrada com sucesso!");
-  }catch(err){
-    console.error(err);
-    alert("Erro ao finalizar venda.");
-  }
+  // Redireciona para tela de Recebimento
+  window.location.href = "recebimento.html"; // ajuste o nome do arquivo
 });
 
 // ---------- Modal Cliente ----------
