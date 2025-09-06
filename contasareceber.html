@@ -39,10 +39,12 @@
   <script>
     const API_BASE = "/api"; // Ajuste se necessário
 
-    // Função para formatar datas do tipo "YYYY-MM-DD" ou "YYYY-MM-DDTHH:MM:SS"
+    // Função robusta para formatar qualquer timestamp da API
     function formatarData(dataStr) {
       if (!dataStr) return '-';
-      const partes = dataStr.split('T')[0].split('-'); // Remove hora e separa ano, mês, dia
+      // Remove a hora se existir
+      const dataSemHora = dataStr.split('T')[0];
+      const partes = dataSemHora.split('-'); // [YYYY, MM, DD]
       if (partes.length !== 3) return '-';
       const ano = partes[0];
       const mes = partes[1];
