@@ -5,55 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>📑 Contas a Receber</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f5f5f5;
-      padding: 20px;
-    }
-    .container {
-      max-width: 800px;
-      margin: auto;
-      background: #fff;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 8px rgba(0,0,0,0.1);
-    }
-    h2 {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
-    }
-    table th, table td {
-      padding: 10px;
-      border: 1px solid #ddd;
-      text-align: center;
-    }
-    table th {
-      background: #007bff;
-      color: #fff;
-    }
-    .btn {
-      padding: 6px 12px;
-      background: #28a745;
-      color: #fff;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 14px;
-    }
-    .btn:hover {
-      background: #218838;
-    }
-    .btn-danger {
-      background: #dc3545;
-    }
-    .btn-danger:hover {
-      background: #b02a37;
-    }
+    body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }
+    .container { max-width: 800px; margin: auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 0 8px rgba(0,0,0,0.1); }
+    h2 { text-align: center; margin-bottom: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    table th, table td { padding: 10px; border: 1px solid #ddd; text-align: center; }
+    table th { background: #007bff; color: #fff; }
+    .btn { padding: 6px 12px; background: #28a745; color: #fff; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; }
+    .btn:hover { background: #218838; }
+    .btn-danger { background: #dc3545; }
+    .btn-danger:hover { background: #b02a37; }
   </style>
 </head>
 <body>
@@ -70,55 +31,71 @@
         </tr>
       </thead>
       <tbody id="tabelaFiados">
-        <!-- Fiados serão listados aqui -->
+        <tr><td colspan="5">Carregando...</td></tr>
       </tbody>
     </table>
   </div>
 
   <script>
-    // Busca os fiados salvos no localStorage
-    let fiados = JSON.parse(localStorage.getItem("contasFiado")) || [];
+    const API_BASE = "/api"; // Ajuste caso sua API esteja em outro caminho
 
-    function carregarFiados() {
-      let tabela = document.getElementById("tabelaFiados");
-      tabela.innerHTML = "";
+    async function carregarFiados() {
+      const tabela = document.getElementById("tabelaFiados");
+      try {
+        const res = await fetch(`${API_BASE}/contasareceber`);
+        if (!res.ok) throw new Error("Erro ao buscar contas a receber");
+        const fiados = await res.json();
 
-      if (fiados.length === 0) {
-        tabela.innerHTML = `<tr><td colspan="5">Nenhum fiado pendente</td></tr>`;
-        return;
-      }
+        if (fiados.length === 0) {
+          tabela.innerHTML = `<tr><td colspan="5">Nenhum fiado pendente</td></tr>`;
+          return;
+        }
 
-      fiados.forEach((fiado, index) => {
-        let row = `
-          <tr>
-            <td>${fiado.cliente}</td>
-            <td>${fiado.data}</td>
+        tabela.innerHTML = "";
+        fiados.forEach((fiado) => {
+          const row = document.createElement("tr");
+
+          row.innerHTML = `
+            <td>${fiado.cliente_nome}</td>
+            <td>${new Date(fiado.data || fiado.created_at).toLocaleDateString("pt-BR")}</td>
             <td>R$ ${parseFloat(fiado.valor).toFixed(2)}</td>
             <td>${fiado.status}</td>
             <td>
-              <button class="btn" onclick="marcarPago(${index})">Marcar Pago</button>
-              <button class="btn btn-danger" onclick="remover(${index})">Remover</button>
+              ${fiado.status !== "Pago" ? `<button class="btn" onclick="marcarPago(${fiado.id})">Marcar Pago</button>` : ""}
+              <button class="btn btn-danger" onclick="remover(${fiado.id})">Remover</button>
             </td>
-          </tr>
-        `;
-        tabela.innerHTML += row;
-      });
+          `;
+          tabela.appendChild(row);
+        });
+
+      } catch (err) {
+        tabela.innerHTML = `<tr><td colspan="5">Erro ao carregar contas: ${err.message}</td></tr>`;
+      }
     }
 
-    function marcarPago(index) {
-      fiados[index].status = "Pago";
-      salvar();
-      carregarFiados();
+    async function marcarPago(id) {
+      try {
+        const res = await fetch(`${API_BASE}/contasareceber/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "Pago" })
+        });
+        if (!res.ok) throw new Error("Erro ao atualizar status");
+        carregarFiados();
+      } catch (err) {
+        alert(err.message);
+      }
     }
 
-    function remover(index) {
-      fiados.splice(index, 1);
-      salvar();
-      carregarFiados();
-    }
-
-    function salvar() {
-      localStorage.setItem("contasFiado", JSON.stringify(fiados));
+    async function remover(id) {
+      if (!confirm("Deseja realmente remover esta conta?")) return;
+      try {
+        const res = await fetch(`${API_BASE}/contasareceber/${id}`, { method: "DELETE" });
+        if (!res.ok) throw new Error("Erro ao remover conta");
+        carregarFiados();
+      } catch (err) {
+        alert(err.message);
+      }
     }
 
     carregarFiados();
