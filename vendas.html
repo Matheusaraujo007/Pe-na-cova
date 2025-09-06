@@ -129,8 +129,8 @@ tr:hover { background:#e9f3fa;}
 <div class="alert" id="alertBox"></div>
 
 <script>
-let estoque = [];
-let clientes = [];
+let estoque = JSON.parse(localStorage.getItem("estoque")) || [];
+let clientes = JSON.parse(localStorage.getItem("clientes")) || [];
 let carrinho = [];
 
 const produtoInput = document.getElementById("produto");
@@ -144,72 +144,65 @@ const listaClientes = document.getElementById("listaClientes");
 const listaProdutos = document.getElementById("listaProdutos");
 const alertBox = document.getElementById("alertBox");
 
-const API_BASE = "/api"; // ajuste se for diferente
-
-// ---------- Funções auxiliares ----------
-async function fetchClientes(){
-  const res = await fetch(`${API_BASE}/clientes`);
-  clientes = await res.json();
+// Atualizar lista de clientes
+function atualizarClientes(){
   listaClientes.innerHTML = "";
   clientes.forEach(c=>{
-    const opt = document.createElement("option");
-    opt.value = `${c.nome} - ${c.telefone}`;
+    let opt=document.createElement("option");
+    opt.value=`${c.nome} - ${c.telefone}`;
     listaClientes.appendChild(opt);
   });
 }
+atualizarClientes();
 
-async function fetchProdutos(){
-  const res = await fetch(`${API_BASE}/produtos`);
-  estoque = await res.json();
+// Atualizar lista de produtos
+function atualizarProdutos(){
   listaProdutos.innerHTML = "";
-  const descricoes = [...new Set(estoque.map(p=>p.descricao))];
-  descricoes.forEach(d=>{
-    const opt = document.createElement("option");
-    opt.value = d;
+  let descricoes = [...new Set(estoque.map(p => p.descricao))];
+  descricoes.forEach(desc=>{
+    const opt=document.createElement("option");
+    opt.value=desc;
     listaProdutos.appendChild(opt);
   });
 }
+atualizarProdutos();
 
-function showAlert(msg){
-  alertBox.textContent = msg;
-  alertBox.style.display="block";
-  setTimeout(()=>{ alertBox.style.display="none"; },2000);
-}
-
-// ---------- Seleção de Produto ----------
+// Selecionar produto -> tamanhos
 produtoInput.addEventListener("change", ()=>{
-  const prod = produtoInput.value;
+  const produtoEscolhido = produtoInput.value;
   tamanhoSelect.innerHTML = "<option value=''>Selecione Tamanho</option>";
-  if(!prod) return;
-  const tamanhos = estoque.filter(p=>p.descricao===prod).map(p=>p.tamanho);
+  if(!produtoEscolhido) return;
+  let tamanhos = estoque.filter(p=>p.descricao===produtoEscolhido).map(p=>p.tamanho);
   tamanhos.forEach(t=>{
-    const opt = document.createElement("option");
-    opt.value = t;
-    opt.textContent = t;
+    const opt=document.createElement("option");
+    opt.value=t;
+    opt.textContent=t;
     tamanhoSelect.appendChild(opt);
   });
 });
 
+// Selecionar tamanho -> estoque disponível
 tamanhoSelect.addEventListener("change", ()=>{
-  const prodEscolhido = produtoInput.value;
+  const produtoEscolhido = produtoInput.value;
   const tamanhoEscolhido = tamanhoSelect.value;
-  const prod = estoque.find(p=>p.descricao===prodEscolhido && p.tamanho===tamanhoEscolhido);
+  let prod = estoque.find(p=>p.descricao===produtoEscolhido && p.tamanho===tamanhoEscolhido);
   estoqueDisponivelSpan.textContent = prod ? prod.quantidade : 0;
 });
 
-// ---------- Carrinho ----------
+// Adicionar ao carrinho
 document.getElementById("btnAdicionar").addEventListener("click", ()=>{
-  const prodEscolhido = produtoInput.value;
+  const produtoEscolhido = produtoInput.value;
   const tamanhoEscolhido = tamanhoSelect.value;
   const qtd = parseInt(qtdInput.value);
 
-  if(!prodEscolhido || !tamanhoEscolhido) return alert("Selecione produto e tamanho!");
-  const prod = estoque.find(p=>p.descricao===prodEscolhido && p.tamanho===tamanhoEscolhido);
+  if(!produtoEscolhido || !tamanhoEscolhido) return alert("Selecione produto e tamanho!");
+  let prod = estoque.find(p=>p.descricao===produtoEscolhido && p.tamanho===tamanhoEscolhido);
   if(!prod) return alert("Produto não encontrado!");
   if(qtd > prod.quantidade) return alert("Quantidade maior que estoque disponível!");
 
-  carrinho.push({ produto_id: prod.id, descricao: prod.descricao, tamanho: prod.tamanho, quantidade: qtd, preco: parseFloat(prod.preco), subtotal: qtd * parseFloat(prod.preco) });
+  carrinho.push({ descricao: prod.descricao, tamanho: prod.tamanho, quantidade: qtd, preco: parseFloat(prod.preco), subtotal: qtd * parseFloat(prod.preco) });
   prod.quantidade -= qtd;
+  localStorage.setItem("estoque", JSON.stringify(estoque));
 
   renderTabela();
   qtdInput.value = 1;
@@ -217,74 +210,68 @@ document.getElementById("btnAdicionar").addEventListener("click", ()=>{
   showAlert("Produto adicionado ao carrinho!");
 });
 
+// Renderizar carrinho
 function renderTabela(){
-  tabela.innerHTML = "";
+  tabela.innerHTML="";
   let total=0;
   carrinho.forEach((item,idx)=>{
     total+=item.subtotal;
-    const tr = document.createElement("tr");
+    const tr=document.createElement("tr");
     tr.innerHTML=`<td>${item.descricao}</td><td>${item.tamanho}</td><td>${item.quantidade}</td><td>R$ ${item.preco.toFixed(2)}</td><td>R$ ${item.subtotal.toFixed(2)}</td><td><button class="action-btn remove-btn" onclick="removerItem(${idx})">Remover</button></td>`;
     tabela.appendChild(tr);
   });
   totalVenda.textContent = total.toFixed(2);
 }
 
+// Remover item
 function removerItem(idx){
   let item = carrinho[idx];
-  const prod = estoque.find(p=>p.id===item.produto_id);
-  if(prod) prod.quantidade += item.quantidade;
+  let prod = estoque.find(p=>p.descricao===item.descricao && p.tamanho===item.tamanho);
+  if(prod){ prod.quantidade += item.quantidade; }
   carrinho.splice(idx,1);
+  localStorage.setItem("estoque", JSON.stringify(estoque));
   renderTabela();
   showAlert("Item removido do carrinho!");
 }
 
-// ---------- Finalizar Venda ----------
-document.getElementById("finalizarVenda").addEventListener("click", ()=>{
-  if(carrinho.length===0) return alert("Carrinho vazio!");
-  const clienteTexto = clienteInput.value.trim();
-  if(!clienteTexto) return alert("Selecione ou digite o cliente!");
-  const cliente = clientes.find(c=>`${c.nome} - ${c.telefone}`===clienteTexto);
-  if(!cliente) return alert("Cliente não encontrado!");
+// --- Finalizar Venda
+document.getElementById("finalizarVenda").addEventListener("click", ()=> {
+  if(carrinho.length === 0) return alert("Carrinho vazio!");
 
-  const total = carrinho.reduce((acc,i)=>acc+i.subtotal,0);
+  // Salva venda atual no localStorage
+  const cliente = document.getElementById("cliente").value.trim();
+  if(!cliente) return alert("Selecione ou digite o nome do cliente!");
 
-  // Salva venda temporária no localStorage
-  const vendaAtual = {
-    cliente: cliente.nome,
-    cliente_id: cliente.id,
-    total,
-    itens: carrinho
-  };
-  localStorage.setItem("vendaAtual", JSON.stringify(vendaAtual));
+  const total = carrinho.reduce((acc, item) => acc + item.subtotal, 0);
+
+  localStorage.setItem("vendaAtual", JSON.stringify({ cliente, total }));
   localStorage.setItem("carrinhoAtual", JSON.stringify(carrinho));
 
-  // Redireciona para tela de Recebimento
-  window.location.href = "recebimento.html"; // ajuste o nome do arquivo
+  // Redireciona para a tela de Recebimento
+  window.location.href = "recebimento.html";
 });
 
-// ---------- Modal Cliente ----------
+// Modal cliente
 document.getElementById("btnCadastrarCliente").addEventListener("click", ()=>{ document.getElementById("modalCliente").style.display="flex"; });
-document.getElementById("salvarCliente").addEventListener("click", async ()=>{
+document.getElementById("salvarCliente").addEventListener("click", ()=>{
   const nome=document.getElementById("nomeCliente").value.trim();
   const telefone=document.getElementById("telefoneCliente").value.trim();
   const endereco=document.getElementById("enderecoCliente").value.trim();
   const obs=document.getElementById("obsCliente").value.trim();
-  if(!nome || !telefone) return alert("Nome e telefone obrigatórios!");
-  try{
-    const res = await fetch(`${API_BASE}/clientes`, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({nome,telefone,endereco,obs}) });
-    if(!res.ok) throw new Error("Erro ao cadastrar cliente");
-    document.getElementById("modalCliente").style.display="none";
-    await fetchClientes();
-    showAlert("Cliente cadastrado com sucesso!");
-  }catch(err){
-    console.error(err);
-    alert("Erro ao cadastrar cliente!");
-  }
+  if(!nome) return alert("Nome obrigatório!");
+  clientes.push({nome, telefone, endereco, obs});
+  localStorage.setItem("clientes", JSON.stringify(clientes));
+  atualizarClientes();
+  document.getElementById("modalCliente").style.display="none";
+  showAlert("Cliente cadastrado com sucesso!");
 });
 
-// ---------- Inicialização ----------
-fetchClientes();
-fetchProdutos();
+// Alerta
+function showAlert(msg){
+  alertBox.textContent=msg;
+  alertBox.style.display="block";
+  setTimeout(()=>{ alertBox.style.display="none"; },2000);
+}
 </script>
 </body>
 </html>
