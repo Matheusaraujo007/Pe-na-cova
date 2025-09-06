@@ -103,7 +103,7 @@
     // ------------------ FUNÇÕES API ------------------
     async function fetchClientes() {
       try {
-        const res = await fetch("/api/Sistema");
+        const res = await fetch("/api/clientes");
         if (!res.ok) throw new Error("Erro ao buscar clientes");
         clientes = await res.json();
         renderTabela();
@@ -115,7 +115,7 @@
 
     async function salvarCliente(cliente) {
       try {
-        const res = await fetch("/api/clientes", {
+        const res = await fetch("/api/Sistema", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(cliente)
