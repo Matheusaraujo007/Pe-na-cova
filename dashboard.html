@@ -88,26 +88,37 @@ function renderTabela(lista){
   const tbody = document.getElementById("tabelaVendas").querySelector("tbody");
   tbody.innerHTML = "";
   let totalGeral = 0;
-  lista.forEach((venda, idx)=>{
-    totalGeral += parseFloat(venda.total || 0);
-    const produtosStr = (venda.produtos || []).map(p=>`${p.descricao} (${p.tamanho}) x${p.quantidade}`).join(", ");
+
+  lista.forEach((venda, idx) => {
+    const totalVenda = parseFloat(venda.total || 0);
+    const desconto = parseFloat(venda.desconto || 0); // ← pega o desconto
+    const totalFinal = totalVenda - desconto;
+    totalGeral += totalFinal;
+
+    const produtosStr = (venda.produtos || [])
+      .map(p => `${p.descricao} (${p.tamanho}) x${p.quantidade}`)
+      .join(", ");
+
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${venda.data}</td>
       <td>${venda.cliente}</td>
       <td>${produtosStr}</td>
-      <td>R$ ${(venda.total || 0).toFixed(2)}</td>
+      <td>R$ ${totalVenda.toFixed(2)}</td>
       <td>R$ ${desconto.toFixed(2)}</td>
       <td>R$ ${totalFinal.toFixed(2)}</td>
       <td>
-    <button class="action-btn remove-btn" onclick="cancelarVenda(${venda.venda_id})">Cancelar</button>
-  </td>
-      <td>-</td>
+        <button class="action-btn remove-btn" onclick="cancelarVenda(${venda.venda_id})">
+          Cancelar
+        </button>
+      </td>
     `;
     tbody.appendChild(tr);
   });
+
   document.getElementById("totalGeral").textContent = totalGeral.toFixed(2);
 }
+
 
 // --- Filtros ---
 document.getElementById("btnFiltrar").addEventListener("click", ()=>{
