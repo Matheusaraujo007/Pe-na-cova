@@ -22,15 +22,14 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Selecionar vendas com total, desconto e total_final
+    // Query principal de vendas
     let queryText = `
       SELECT 
-        v.id as venda_id, 
-        v.data, 
-        c.nome as cliente,
+        v.id AS venda_id,
+        v.data,
+        c.nome AS cliente,
         v.total,
-        v.desconto,
-        v.total_final
+        v.desconto
       FROM vendas v
       LEFT JOIN clientes c ON v.cliente_id = c.id
       WHERE 1=1
@@ -61,7 +60,7 @@ export default async function handler(req, res) {
     const relatorio = [];
 
     for (let venda of vendas) {
-      // Buscar produtos de cada venda
+      // Buscar itens da venda
       let produtosQuery = `
         SELECT p.descricao, vp.tamanho, vp.quantidade, vp.preco, (vp.quantidade * vp.preco) AS subtotal
         FROM vendas_itens vp
@@ -77,13 +76,18 @@ export default async function handler(req, res) {
 
       const produtos = await executarQuery(produtosQuery, produtosParams);
 
+      // Garantir que total_final seja sempre total - desconto
+      const total = Number(venda.total) || 0;
+      const desconto = Number(venda.desconto) || 0;
+      const total_final = total - desconto;
+
       relatorio.push({
         venda_id: venda.venda_id,
         data: venda.data ? new Date(venda.data.getTime() - 3*60*60*1000).toISOString().split('T')[0] : '',
         cliente: venda.cliente || "Cliente não encontrado",
-        total: Number(venda.total) || 0,
-        desconto: Number(venda.desconto) || 0,
-        total_final: Number(venda.total_final) || (Number(venda.total) - Number(venda.desconto)),
+        total,
+        desconto,
+        total_final,
         produtos: produtos.map(p => ({
           descricao: p.descricao || "-",
           tamanho: p.tamanho || "-",
