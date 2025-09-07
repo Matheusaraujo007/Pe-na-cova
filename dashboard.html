@@ -87,35 +87,31 @@ async function buscarVendas() {
 function renderTabela(lista){
   const tbody = document.getElementById("tabelaVendas").querySelector("tbody");
   tbody.innerHTML = "";
-
-  // Criar um objeto para somar valores por cliente
-  const clientesTotais = {};
   let totalGeral = 0;
 
-  lista.forEach(venda => {
+  lista.forEach((venda, idx) => {
     const totalVenda = parseFloat(venda.total || 0);
-    const desconto = parseFloat(venda.desconto || 0);
+    const desconto = parseFloat(venda.desconto || 0); // ← pega o desconto
     const totalFinal = totalVenda - desconto;
     totalGeral += totalFinal;
 
-    if(!clientesTotais[venda.cliente]){
-      clientesTotais[venda.cliente] = { total: 0, desconto: 0 };
-    }
-    clientesTotais[venda.cliente].total += totalFinal;
-    clientesTotais[venda.cliente].desconto += desconto;
-  });
+    const produtosStr = (venda.produtos || [])
+      .map(p => `${p.descricao} (${p.tamanho}) x${p.quantidade}`)
+      .join(", ");
 
-  // Agora renderizar cada cliente como uma linha
-  Object.keys(clientesTotais).forEach(cliente => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>-</td>
-      <td>${cliente}</td>
-      <td>-</td>
-      <td>R$ ${(clientesTotais[cliente].total + clientesTotais[cliente].desconto).toFixed(2)}</td>
-      <td>R$ ${clientesTotais[cliente].desconto.toFixed(2)}</td>
-      <td>R$ ${clientesTotais[cliente].total.toFixed(2)}</td>
-      <td></td>
+      <td>${venda.data}</td>
+      <td>${venda.cliente}</td>
+      <td>${produtosStr}</td>
+      <td>R$ ${totalVenda.toFixed(2)}</td>
+      <td>R$ ${desconto.toFixed(2)}</td>
+      <td>R$ ${totalFinal.toFixed(2)}</td>
+      <td>
+        <button class="action-btn remove-btn" onclick="cancelarVenda(${venda.venda_id})">
+          Cancelar
+        </button>
+      </td>
     `;
     tbody.appendChild(tr);
   });
