@@ -165,18 +165,30 @@ body::before {
 </div>
 
 <script>
-function login() {
+async function login() {
   const user = document.getElementById("usuario").value.trim();
   const pass = document.getElementById("senha").value.trim();
   const alertMsg = document.getElementById("alertMsg");
 
-  // Exemplo de validação simples
-  if(user === "Admin" && pass === "1234") {
-    // Marca usuário como logado
-    sessionStorage.setItem("isLoggedIn", "true");
-    alertMsg.style.display = "none";
-    window.location.href = "painel.html"; // Redireciona para o painel
-  } else {
+  try {
+    // Busca os usuários no JSON
+    const response = await fetch('users.json');
+    const users = await response.json();
+
+    // Verifica se existe algum usuário com esse username e senha
+    const validUser = users.find(u => u.username === user && u.password === pass);
+
+    if(validUser) {
+      sessionStorage.setItem('isLoggedIn', 'true');
+      sessionStorage.setItem('username', validUser.username); // opcional, para mostrar no painel
+      alertMsg.style.display = 'none';
+      window.location.href = 'painel.html';
+    } else {
+      alertMsg.style.display = 'block';
+    }
+  } catch (error) {
+    console.error("Erro ao carregar usuários:", error);
+    alertMsg.textContent = "Erro ao tentar fazer login!";
     alertMsg.style.display = "block";
   }
 }
