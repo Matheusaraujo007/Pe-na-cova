@@ -75,6 +75,7 @@ export default async function handler(req, res) {
       relatorio.push({
         data: venda.data ? new Date(venda.data.getTime() - 3*60*60*1000).toISOString().split('T')[0] : '',
         cliente: venda.cliente || "Cliente não encontrado",
+        desconto: Number(venda.desconto) || 0, // ✅ Aqui pegamos o desconto
         produtos: produtos.map(p => ({
           descricao: p.descricao || "-",
           tamanho: p.tamanho || "-",
