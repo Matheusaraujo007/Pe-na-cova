@@ -19,7 +19,7 @@
 </head>
 <body>
   <div class="container">
-    <h2>📑 Contas a Receber (Fiado)</h2>
+    <h2>📑 Contas a Receber (Consignado)</h2>
     <table>
       <thead>
         <tr>
@@ -30,7 +30,7 @@
           <th>Ações</th>
         </tr>
       </thead>
-      <tbody id="tabelaFiados">
+      <tbody id="tabelaConsignado">
         <tr><td colspan="5">Carregando...</td></tr>
       </tbody>
     </table>
@@ -40,29 +40,29 @@
     const API_BASE = "/api"; // Ajuste se necessário
 
     async function carregarFiados() {
-      const tabela = document.getElementById("tabelaFiados");
+      const tabela = document.getElementById("tabelaConsignado");
       try {
         const res = await fetch(`${API_BASE}/contasareceber`);
         if (!res.ok) throw new Error("Erro ao buscar contas a receber");
-        const fiados = await res.json();
+        const Consignado = await res.json();
 
         if (fiados.length === 0) {
-          tabela.innerHTML = `<tr><td colspan="5">Nenhum fiado pendente</td></tr>`;
+          tabela.innerHTML = `<tr><td colspan="5">Nenhum consignado pendente</td></tr>`;
           return;
         }
 
         tabela.innerHTML = "";
-        fiados.forEach((fiado) => {
+        Consignado.forEach((consignado) => {
           const row = document.createElement("tr");
 
           row.innerHTML = `
-            <td>${fiado.cliente}</td>
-            <td>${fiado.data}</td>
-            <td>R$ ${parseFloat(fiado.valor).toFixed(2)}</td>
-            <td>${fiado.status}</td>
+            <td>${consignado.cliente}</td>
+            <td>${consignado.data}</td>
+            <td>R$ ${parseFloat(consignado.valor).toFixed(2)}</td>
+            <td>${consignado.status}</td>
             <td>
-              ${fiado.status !== "Pago" ? `<button class="btn" onclick="marcarPago(${fiado.id})">Marcar Pago</button>` : ""}
-              <button class="btn btn-danger" onclick="remover(${fiado.id})">Remover</button>
+              ${consignado.status !== "Pago" ? `<button class="btn" onclick="marcarPago(${consignado.id})">Marcar Pago</button>` : ""}
+              <button class="btn btn-danger" onclick="remover(${consignado.id})">Remover</button>
             </td>
           `;
           tabela.appendChild(row);
@@ -81,7 +81,7 @@
           body: JSON.stringify({ id, status: "Pago" })
         });
         if (!res.ok) throw new Error("Erro ao atualizar status");
-        carregarFiados();
+        carregarConsignado();
       } catch (err) {
         alert(err.message);
       }
@@ -98,7 +98,7 @@
       }
     }
 
-    carregarFiados();
+    carregarConsignado();
   </script>
 </body>
 </html>
