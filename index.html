@@ -165,32 +165,15 @@ body::before {
 </div>
 
 <script>
-async function login() {
-  const nome = document.getElementById("usuario").value.trim();
-  const senha = document.getElementById("senha").value.trim();
+function login() {
+  const user = document.getElementById("usuario").value.trim();
+  const pass = document.getElementById("senha").value.trim();
   const alertMsg = document.getElementById("alertMsg");
 
-  try {
-    const response = await fetch("/api/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nome, senha }),
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
-      sessionStorage.setItem("isLoggedIn", "true");
-      sessionStorage.setItem("username", data.usuario.nome);
-      alertMsg.style.display = "none";
-      window.location.href = "painel.html";
-    } else {
-      alertMsg.textContent = data.error || "Falha no login";
-      alertMsg.style.display = "block";
-    }
-  } catch (error) {
-    console.error("Erro no login:", error);
-    alertMsg.textContent = "Erro ao conectar com o servidor!";
+  if(user === "Admin" && pass === "1234") {
+    alertMsg.style.display = "none";
+    window.location.href = "painel.html"; // redireciona para o PDV
+  } else {
     alertMsg.style.display = "block";
   }
 }
