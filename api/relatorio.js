@@ -1,4 +1,4 @@
-// api/vendas.js
+// api/relatorio.js
 import pkg from "pg";
 const { Pool } = pkg;
 
@@ -8,22 +8,30 @@ const pool = new Pool({
 });
 
 async function query(sql, params = []) {
-  const result = await pool.query(sql, params);
-  return result.rows;
+  const client = await pool.connect();
+  try {
+    const result = await client.query(sql, params);
+    return result.rows;
+  } finally {
+    client.release();
+  }
 }
 
 export default async function handler(req, res) {
-  const { method, query: q } = req;
-
-  if (method !== "GET") {
+  if (req.method !== "GET") {
     return res.status(405).json({ error: "Método não permitido" });
   }
 
-  const { dataInicio, dataFim, cliente, produto } = q;
+  const { dataInicio, dataFim, cliente, produto } = req.query;
 
   try {
-    // Buscar vendas com JOIN
-    let vendas = await query(`
+    // Tratar datas vazias
+    const dataInicioParam = dataInicio && dataInicio.trim() !== "" ? dataInicio : null;
+    const dataFimParam = dataFim && dataFim.trim() !== "" ? dataFim : null;
+
+    // 1️⃣ Buscar vendas com filtros
+    const vendas = await query(
+      `
       SELECT v.id as venda_id, v.data, c.nome as cliente
       FROM vendas v
       LEFT JOIN clientes c ON v.cliente_id = c.id
@@ -31,45 +39,48 @@ export default async function handler(req, res) {
         AND ($2 IS NULL OR v.data <= $2)
         AND ($3 IS NULL OR LOWER(c.nome) LIKE '%' || LOWER($3) || '%')
       ORDER BY v.data DESC
-    `, [dataInicio || null, dataFim || null, cliente || null]);
+      `,
+      [dataInicioParam, dataFimParam, cliente || null]
+    );
 
+    // 2️⃣ Para cada venda, buscar produtos
     const relatorio = [];
 
-    for (let venda of vendas) {
+    for (const venda of vendas) {
       let produtosQuery = `
         SELECT p.descricao, vi.tamanho, vi.quantidade, vi.preco
         FROM vendas_itens vi
         LEFT JOIN produtos p ON vi.produto_id = p.id
         WHERE vi.venda_id = $1
       `;
-
       const params = [venda.venda_id];
 
-      if (produto) {
+      if (produto && produto.trim() !== "") {
         produtosQuery += ` AND LOWER(p.descricao) LIKE '%' || LOWER($2) || '%'`;
         params.push(produto);
       }
 
-      let produtos = await query(produtosQuery, params);
+      const produtos = await query(produtosQuery, params);
 
-      produtos = produtos.map(p => ({
+      // Calcular subtotal de cada produto
+      const produtosComSubtotal = produtos.map(p => ({
         descricao: p.descricao || '-',
         tamanho: p.tamanho || '-',
         quantidade: p.quantidade || 0,
-        subtotal: (p.quantidade || 0) * (p.preco || 0)
+        subtotal: p.preco && p.quantidade ? parseFloat(p.preco) * parseInt(p.quantidade) : 0
       }));
 
       relatorio.push({
-        data: venda.data ? venda.data.toISOString().split('T')[0] : '',
-        cliente: venda.cliente || 'Cliente não encontrado',
-        produtos
+        data: venda.data ? venda.data.toISOString().split("T")[0] : '',
+        cliente: venda.cliente || '-',
+        produtos: produtosComSubtotal
       });
     }
 
     return res.status(200).json(relatorio);
 
   } catch (err) {
-    console.error("Erro na API de vendas:", err.message);
+    console.error("Erro na API de relatório:", err);
     return res.status(500).json({ error: "Erro interno no servidor" });
   }
 }
