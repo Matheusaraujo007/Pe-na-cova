@@ -191,11 +191,18 @@ async function cadastrar() {
       body: JSON.stringify({ usuario, senha })
     });
 
-    const data = await response.json();
+    let data;
+    try {
+      data = await response.json();
+    } catch {
+      console.error("Resposta não é JSON:", await response.text());
+      alert("Erro inesperado do servidor");
+      return;
+    }
 
     if (response.ok) {
       alert(data.message);
-      window.location.href = "index.html"; // vai para login
+      window.location.href = "index.html";
     } else {
       alert(data.error);
     }
