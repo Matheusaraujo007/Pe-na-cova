@@ -55,8 +55,8 @@ tr:hover { background: #e9f3fa; }
         <th>Produtos</th>
         <th>Total</th>
         <th>Desconto</th>
+        <th>Total Final</th>
         <th>Ações</th>
-
       </tr>
     </thead>
     <tbody></tbody>
@@ -91,17 +91,11 @@ function renderTabela(lista){
   let totalGeral = 0;
   const clientesTotais = {};
 
-  // --- Renderizar vendas individuais ---
   lista.forEach(venda => {
-    // Calcular total da venda a partir dos produtos de forma segura
-    const totalVenda = (venda.produtos || []).reduce((sum, p) => {
-      const preco = parseFloat(p.preco) || 0;
-      const quantidade = parseInt(p.quantidade) || 0;
-      return sum + (preco * quantidade);
-    }, 0);
-
+    // Usar os valores salvos na venda
+    const totalVenda = parseFloat(venda.total) || 0;
     const desconto = parseFloat(venda.desconto) || 0;
-    const totalFinal = totalVenda - desconto;
+    const totalFinal = parseFloat(venda.total_final) || (totalVenda - desconto);
     totalGeral += totalFinal;
 
     // Somar por cliente
@@ -126,9 +120,7 @@ function renderTabela(lista){
       <td>R$ ${desconto.toFixed(2)}</td>
       <td>R$ ${totalFinal.toFixed(2)}</td>
       <td>
-        <button class="action-btn remove-btn" onclick="cancelarVenda(${venda.venda_id})">
-          Cancelar
-        </button>
+        <button class="action-btn remove-btn" onclick="cancelarVenda(${venda.venda_id})">Cancelar</button>
       </td>
     `;
     tbody.appendChild(tr);
@@ -155,11 +147,8 @@ function renderTabela(lista){
     });
   }
 
-  // --- Atualizar total geral ---
   document.getElementById("totalGeral").textContent = totalGeral.toFixed(2);
 }
-
-
 
 // --- Filtros ---
 document.getElementById("btnFiltrar").addEventListener("click", ()=>{
