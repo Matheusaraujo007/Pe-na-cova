@@ -1,31 +1,33 @@
-import pkg from 'pg';
-import bcrypt from 'bcrypt';
-const { Pool } = pkg;
+import { Pool } from "pg";
+import bcrypt from "bcrypt";
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL_CUSTOM, // coloque a URL do Neon no Vercel
+  connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Método não permitido' });
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Método não permitido" });
+  }
 
   const { usuario, senha } = req.body;
 
-  if (!usuario || !senha) return res.status(400).json({ error: 'Preencha todos os campos' });
+  if (!usuario || !senha) {
+    return res.status(400).json({ error: "Preencha todos os campos" });
+  }
 
   try {
     const hash = await bcrypt.hash(senha, 10);
 
-    const query = 'INSERT INTO usuarios (nome, senha) VALUES ($1, $2)';
-    await pool.query(query, [usuario, hash]);
+    const result = await pool.query(
+      "INSERT INTO usuarios (nome, senha) VALUES ($1, $2) RETURNING id, nome",
+      [usuario, hash]
+    );
 
-    res.status(200).json({ message: 'Usuário cadastrado com sucesso!' });
+    res.status(200).json({ message: "Usuário cadastrado!", user: result.rows[0] });
   } catch (err) {
-    if (err.code === '23505') {
-      // Violação de unicidade
-      return res.status(400).json({ error: 'Usuário já existe!' });
-    }
-    res.status(500).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({ error: "Erro no servidor" });
   }
 }
