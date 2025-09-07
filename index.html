@@ -170,9 +170,12 @@ function login() {
   const pass = document.getElementById("senha").value.trim();
   const alertMsg = document.getElementById("alertMsg");
 
+  // Exemplo de validação simples
   if(user === "Admin" && pass === "1234") {
+    // Marca usuário como logado
+    sessionStorage.setItem("isLoggedIn", "true");
     alertMsg.style.display = "none";
-    window.location.href = "painel.html"; // redireciona para o PDV
+    window.location.href = "painel.html"; // Redireciona para o painel
   } else {
     alertMsg.style.display = "block";
   }
