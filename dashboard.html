@@ -54,6 +54,7 @@ tr:hover { background: #e9f3fa; }
         <th>Cliente</th>
         <th>Produtos</th>
         <th>Total</th>
+        <th>Desconto</th>
         <th>Ações</th>
 
       </tr>
@@ -96,6 +97,8 @@ function renderTabela(lista){
       <td>${venda.cliente}</td>
       <td>${produtosStr}</td>
       <td>R$ ${(venda.total || 0).toFixed(2)}</td>
+      <td>R$ ${desconto.toFixed(2)}</td>
+      <td>R$ ${totalFinal.toFixed(2)}</td>
       <td>
     <button class="action-btn remove-btn" onclick="cancelarVenda(${venda.venda_id})">Cancelar</button>
   </td>
