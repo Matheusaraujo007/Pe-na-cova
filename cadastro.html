@@ -195,13 +195,13 @@ async function cadastrar() {
 
     if (response.ok) {
       alert(data.message);
-      window.location.href = "index.html"; // redireciona para login
+      window.location.href = "index.html";
     } else {
       alert(data.error);
     }
-
   } catch (err) {
-    alert("Erro ao cadastrar usuário: " + err.message);
+    console.error(err);
+    alert("Erro ao tentar cadastrar!");
   }
 }
 </script>
