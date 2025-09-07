@@ -26,6 +26,9 @@
   <label>Valor Total:</label>
   <input type="text" id="valorTotal" disabled>
 
+  <label>Desconto (%):</label>
+  <input type="number" id="desconto" min="0" max="100" value="0">
+
   <label for="formaPagamento">Forma de Pagamento:</label>
   <select id="formaPagamento">
     <option value="dinheiro">Dinheiro</option>
@@ -50,6 +53,13 @@ if(venda) {
   document.getElementById("valorTotal").value = venda.total.toFixed(2);
 }
 
+// Atualiza valor total ao digitar desconto
+document.getElementById("desconto").addEventListener("input", () => {
+  const desconto = parseFloat(document.getElementById("desconto").value) || 0;
+  const totalComDesconto = venda.total * (1 - desconto / 100);
+  document.getElementById("valorTotal").value = totalComDesconto.toFixed(2);
+});
+
 document.getElementById("btnFinalizar").addEventListener("click", async () => {
   if(!venda || carrinho.length === 0) { 
     alert("Nenhuma venda em andamento ou carrinho vazio!"); 
@@ -57,11 +67,13 @@ document.getElementById("btnFinalizar").addEventListener("click", async () => {
   }
 
   const forma = document.getElementById("formaPagamento").value;
+  const desconto = parseFloat(document.getElementById("desconto").value) || 0;
+  const totalComDesconto = venda.total * (1 - desconto / 100);
 
   try {
     // Prepara itens para enviar para API
     const itensAPI = carrinho.map(item => ({
-      produto_id: item.produto_id, // ⚠️ id correto do produto
+      produto_id: item.produto_id,
       quantidade: item.quantidade,
       preco: item.preco,
       tamanho: item.tamanho
@@ -74,7 +86,8 @@ document.getElementById("btnFinalizar").addEventListener("click", async () => {
         cliente_id: venda.cliente_id,
         itens: itensAPI,
         forma_pagamento: forma,
-        total: venda.total
+        total: totalComDesconto,
+        desconto: desconto
       })
     });
 
@@ -83,7 +96,7 @@ document.getElementById("btnFinalizar").addEventListener("click", async () => {
 
     alert("Venda finalizada e estoque atualizado com sucesso!");
 
-    gerarPDF();
+    gerarPDF(totalComDesconto, desconto);
     
     // Limpa localStorage
     localStorage.removeItem("vendaAtual");
@@ -95,7 +108,7 @@ document.getElementById("btnFinalizar").addEventListener("click", async () => {
   }
 });
 
-function gerarPDF(){
+function gerarPDF(totalComDesconto, desconto){
   const doc = new jsPDF();
   doc.setFontSize(18);
   doc.setTextColor(47,127,179);
@@ -127,7 +140,10 @@ function gerarPDF(){
   });
 
   doc.setFont(undefined, "bold");
-  doc.text(`Total: R$ ${venda.total.toFixed(2)}`, 150, startY+10);
+  if(desconto > 0){
+    doc.text(`Desconto: ${desconto.toFixed(2)}%`, 20, startY+10);
+  }
+  doc.text(`Total (com desconto): R$ ${totalComDesconto.toFixed(2)}`, 150, startY+10);
 
   doc.save(`nota_${venda.cliente}_${Date.now()}.pdf`);
   window.location.href = "vendas.html";
