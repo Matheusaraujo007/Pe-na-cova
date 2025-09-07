@@ -180,7 +180,7 @@
           <td>${cliente.observacoes || ""}</td>
           <td>
             <button class="action-btn edit-btn" onclick="editarCliente(${index})">Editar</button>
-            <button onclick="excluirCliente(${cliente.id})">Excluir</button>
+            <button class="action-btn delete-btn" onclick="excluirCliente(${cliente.id})">Excluir</button>
           </td>
         `;
         tabela.appendChild(tr);
