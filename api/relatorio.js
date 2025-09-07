@@ -7,7 +7,7 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false },
 });
 
-// Função auxiliar
+// Função auxiliar para executar queries
 async function executarQuery(sql, params = []) {
   const result = await pool.query(sql, params);
   return result.rows;
@@ -22,9 +22,15 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Monta query dinâmica para vendas
+    // Selecionar vendas com total, desconto e total_final
     let queryText = `
-      SELECT v.id as venda_id, v.data, c.nome as cliente
+      SELECT 
+        v.id as venda_id, 
+        v.data, 
+        c.nome as cliente,
+        v.total,
+        v.desconto,
+        v.total_final
       FROM vendas v
       LEFT JOIN clientes c ON v.cliente_id = c.id
       WHERE 1=1
@@ -37,13 +43,11 @@ export default async function handler(req, res) {
       params.push(dataInicio);
       paramIndex++;
     }
-
     if (dataFim) {
       queryText += ` AND v.data <= $${paramIndex}`;
       params.push(dataFim);
       paramIndex++;
     }
-
     if (cliente) {
       queryText += ` AND LOWER(c.nome) LIKE '%' || LOWER($${paramIndex}) || '%'`;
       params.push(cliente);
@@ -54,9 +58,10 @@ export default async function handler(req, res) {
 
     const vendas = await executarQuery(queryText, params);
 
-    // Buscar produtos de cada venda
     const relatorio = [];
+
     for (let venda of vendas) {
+      // Buscar produtos de cada venda
       let produtosQuery = `
         SELECT p.descricao, vp.tamanho, vp.quantidade, vp.preco, (vp.quantidade * vp.preco) AS subtotal
         FROM vendas_itens vp
@@ -73,13 +78,17 @@ export default async function handler(req, res) {
       const produtos = await executarQuery(produtosQuery, produtosParams);
 
       relatorio.push({
+        venda_id: venda.venda_id,
         data: venda.data ? new Date(venda.data.getTime() - 3*60*60*1000).toISOString().split('T')[0] : '',
         cliente: venda.cliente || "Cliente não encontrado",
-        desconto: Number(venda.desconto) || 0, // ✅ Aqui pegamos o desconto
+        total: Number(venda.total) || 0,
+        desconto: Number(venda.desconto) || 0,
+        total_final: Number(venda.total_final) || (Number(venda.total) - Number(venda.desconto)),
         produtos: produtos.map(p => ({
           descricao: p.descricao || "-",
           tamanho: p.tamanho || "-",
           quantidade: p.quantidade || 0,
+          preco: Number(p.preco) || 0,
           subtotal: Number(p.subtotal) || 0
         }))
       });
