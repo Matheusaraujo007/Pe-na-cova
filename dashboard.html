@@ -67,36 +67,39 @@ tr:hover { background: #e9f3fa; }
 <div class="back"><a href="painel.html">⬅ Voltar ao Painel</a></div>
 
 <script>
-// Dados simulados de vendas no localStorage
-let vendas = JSON.parse(localStorage.getItem("vendas")) || [];
+let vendas = [];
 
-// --- Função para renderizar tabela ---
+// --- Buscar vendas do banco via API ---
+async function buscarVendas() {
+  try {
+    const res = await fetch("/api/relatorio"); // Busca todas as vendas
+    if (!res.ok) throw new Error("Erro ao buscar vendas do servidor");
+    vendas = await res.json();
+    renderTabela(vendas);
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+// --- Renderizar tabela ---
 function renderTabela(lista){
   const tbody = document.getElementById("tabelaVendas").querySelector("tbody");
   tbody.innerHTML = "";
   let totalGeral = 0;
   lista.forEach((venda, idx)=>{
-    totalGeral += venda.total;
-    const produtosStr = venda.produtos.map(p=>`${p.descricao} (${p.tamanho}) x${p.quantidade}`).join(", ");
+    totalGeral += parseFloat(venda.total || 0);
+    const produtosStr = (venda.produtos || []).map(p=>`${p.descricao} (${p.tamanho}) x${p.quantidade}`).join(", ");
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${venda.data}</td>
       <td>${venda.cliente}</td>
       <td>${produtosStr}</td>
-      <td>R$ ${venda.total.toFixed(2)}</td>
-      <td><button class="action-btn remove-btn" onclick="removerVenda(${idx})">Remover</button></td>
+      <td>R$ ${(venda.total || 0).toFixed(2)}</td>
+      <td>-</td>
     `;
     tbody.appendChild(tr);
   });
   document.getElementById("totalGeral").textContent = totalGeral.toFixed(2);
-}
-
-// --- Remover venda ---
-function removerVenda(idx){
-  if(!confirm("Deseja realmente remover esta venda?")) return;
-  vendas.splice(idx,1);
-  localStorage.setItem("vendas", JSON.stringify(vendas));
-  renderTabela(vendas);
 }
 
 // --- Filtros ---
@@ -109,7 +112,7 @@ document.getElementById("btnFiltrar").addEventListener("click", ()=>{
     let cond = true;
     if(data) cond = cond && v.data===data;
     if(cliente) cond = cond && v.cliente.toLowerCase().includes(cliente);
-    if(produto) cond = cond && v.produtos.some(p=>p.descricao.toLowerCase().includes(produto));
+    if(produto) cond = cond && (v.produtos || []).some(p=>p.descricao.toLowerCase().includes(produto));
     return cond;
   });
   renderTabela(filtradas);
@@ -123,8 +126,9 @@ document.getElementById("btnLimpar").addEventListener("click", ()=>{
   renderTabela(vendas);
 });
 
-// Inicializar
-renderTabela(vendas);
+// --- Inicializar ---
+buscarVendas();
 </script>
+
 </body>
 </html>
