@@ -166,29 +166,31 @@ body::before {
 
 <script>
 async function login() {
-  const user = document.getElementById("usuario").value.trim();
-  const pass = document.getElementById("senha").value.trim();
+  const nome = document.getElementById("usuario").value.trim();
+  const senha = document.getElementById("senha").value.trim();
   const alertMsg = document.getElementById("alertMsg");
 
   try {
-    // Busca os usuários no JSON
-    const response = await fetch('users.json');
-    const users = await response.json();
+    const response = await fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nome, senha }),
+    });
 
-    // Verifica se existe algum usuário com esse username e senha
-    const validUser = users.find(u => u.username === user && u.password === pass);
+    const data = await response.json();
 
-    if(validUser) {
-      sessionStorage.setItem('isLoggedIn', 'true');
-      sessionStorage.setItem('username', validUser.username); // opcional, para mostrar no painel
-      alertMsg.style.display = 'none';
-      window.location.href = 'painel.html';
+    if (response.ok) {
+      sessionStorage.setItem("isLoggedIn", "true");
+      sessionStorage.setItem("username", data.usuario.nome);
+      alertMsg.style.display = "none";
+      window.location.href = "painel.html";
     } else {
-      alertMsg.style.display = 'block';
+      alertMsg.textContent = data.error || "Falha no login";
+      alertMsg.style.display = "block";
     }
   } catch (error) {
-    console.error("Erro ao carregar usuários:", error);
-    alertMsg.textContent = "Erro ao tentar fazer login!";
+    console.error("Erro no login:", error);
+    alertMsg.textContent = "Erro ao conectar com o servidor!";
     alertMsg.style.display = "block";
   }
 }
