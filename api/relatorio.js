@@ -1,4 +1,4 @@
-// api/relatorio.js (ou api/vendas.js se for renomear)
+api/relatorio.js //(ou api/vendas.js se for renomear)
 import pkg from "pg";
 const { Pool } = pkg;
 
