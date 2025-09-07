@@ -27,7 +27,7 @@ export default async function handler(req, res) {
 
     res.status(200).json({ message: "Usuário cadastrado!", user: result.rows[0] });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erro no servidor" });
+    console.error("Erro ao cadastrar usuário:", err);
+    res.status(500).json({ error: "Erro ao cadastrar usuário" });
   }
 }
