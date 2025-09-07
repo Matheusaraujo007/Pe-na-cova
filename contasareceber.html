@@ -37,68 +37,69 @@
   </div>
 
   <script>
-    const API_BASE = "/api"; // Ajuste se necessário
+  const API_BASE = "/api"; // Ajuste se necessário
 
-    async function carregarConsignado() {
-      const tabela = document.getElementById("tabelaConsignado");
-      try {
-        const res = await fetch(`${API_BASE}/contasareceber`);
-        if (!res.ok) throw new Error("Erro ao buscar contas a receber");
-        const consignado = await res.json();
+  async function carregarConsignado() {
+    const tabela = document.getElementById("tabelaConsignado");
+    try {
+      const res = await fetch(`${API_BASE}/contasareceber`);
+      if (!res.ok) throw new Error("Erro ao buscar contas a receber");
 
-        if (consignado.length === 0) {
-          tabela.innerHTML = `<tr><td colspan="5">Nenhum consignado pendente</td></tr>`;
-          return;
-        }
+      const consignados = await res.json(); // variável em minúsculo
 
-        tabela.innerHTML = "";
-        consignado.forEach((consignado) => {
-          const row = document.createElement("tr");
-
-          row.innerHTML = `
-            <td>${consignado.cliente}</td>
-            <td>${consignado.data}</td>
-            <td>R$ ${parseFloat(consignado.valor).toFixed(2)}</td>
-            <td>${consignado.status}</td>
-            <td>
-              ${consignado.status !== "Pago" ? `<button class="btn" onclick="marcarPago(${consignado.id})">Marcar Pago</button>` : ""}
-              <button class="btn btn-danger" onclick="remover(${consignado.id})">Remover</button>
-            </td>
-          `;
-          tabela.appendChild(row);
-        });
-
-      } catch (err) {
-        tabela.innerHTML = `<tr><td colspan="5">Erro ao carregar contas: ${err.message}</td></tr>`;
+      if (consignados.length === 0) {
+        tabela.innerHTML = `<tr><td colspan="5">Nenhum consignado pendente</td></tr>`;
+        return;
       }
-    }
 
-    async function marcarPago(id) {
-      try {
-        const res = await fetch(`${API_BASE}/contasareceber`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id, status: "Pago" })
-        });
-        if (!res.ok) throw new Error("Erro ao atualizar status");
-        carregarConsignado();
-      } catch (err) {
-        alert(err.message);
-      }
-    }
+      tabela.innerHTML = "";
+      consignados.forEach((c) => {
+        const row = document.createElement("tr");
 
-    async function remover(id) {
-      if (!confirm("Deseja realmente remover esta conta?")) return;
-      try {
-        const res = await fetch(`${API_BASE}/contasareceber/${id}`, { method: "DELETE" });
-        if (!res.ok) throw new Error("Erro ao remover conta");
-        carregarConsignado();
-      } catch (err) {
-        alert(err.message);
-      }
-    }
+        row.innerHTML = `
+          <td>${c.cliente}</td>
+          <td>${c.data}</td>
+          <td>R$ ${parseFloat(c.valor).toFixed(2)}</td>
+          <td>${c.status}</td>
+          <td>
+            ${c.status !== "Pago" ? `<button class="btn" onclick="marcarPago(${c.id})">Marcar Pago</button>` : ""}
+            <button class="btn btn-danger" onclick="remover(${c.id})">Remover</button>
+          </td>
+        `;
+        tabela.appendChild(row);
+      });
 
-    carregarConsignado();
-  </script>
+    } catch (err) {
+      tabela.innerHTML = `<tr><td colspan="5">Erro ao carregar contas: ${err.message}</td></tr>`;
+    }
+  }
+
+  async function marcarPago(id) {
+    try {
+      const res = await fetch(`${API_BASE}/contasareceber`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status: "Pago" })
+      });
+      if (!res.ok) throw new Error("Erro ao atualizar status");
+      carregarConsignado();
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
+  async function remover(id) {
+    if (!confirm("Deseja realmente remover esta conta?")) return;
+    try {
+      const res = await fetch(`${API_BASE}/contasareceber/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Erro ao remover conta");
+      carregarConsignado();
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
+  carregarConsignado();
+</script>
 </body>
 </html>
