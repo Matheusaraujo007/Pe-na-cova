@@ -175,22 +175,37 @@ body::before {
 </div>
 
 <script>
-function cadastrar() {
-  const user = document.getElementById("usuario").value.trim();
-  const pass = document.getElementById("senha").value.trim();
+async function cadastrar() {
+  const usuario = document.getElementById("usuario").value.trim();
+  const senha = document.getElementById("senha").value.trim();
 
-  if (!user || !pass) {
+  if (!usuario || !senha) {
     alert("Preencha todos os campos!");
     return;
   }
 
-  // Aqui faria a requisição para sua API
-  alert("Usuário cadastrado com sucesso! (simulação)");
+  try {
+    const response = await fetch('/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ usuario, senha })
+    });
 
-  // Depois pode redirecionar para o login
-  window.location.href = "index.html";
+    const data = await response.json();
+
+    if (response.ok) {
+      alert(data.message);
+      window.location.href = "index.html"; // redireciona para login
+    } else {
+      alert(data.error);
+    }
+
+  } catch (err) {
+    alert("Erro ao cadastrar usuário: " + err.message);
+  }
 }
 </script>
+
 
 </body>
 </html>
