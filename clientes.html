@@ -180,7 +180,7 @@
           <td>${cliente.observacoes || ""}</td>
           <td>
             <button class="action-btn edit-btn" onclick="editarCliente(${index})">Editar</button>
-            <button class="action-btn delete-btn" onclick="excluirCliente(${index})">Excluir</button>
+            <button onclick="excluirCliente(${cliente.id})">Excluir</button>
           </td>
         `;
         tabela.appendChild(tr);
@@ -219,26 +219,30 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    async function excluirCliente(index) {
-  if (confirm("Deseja realmente excluir este cliente?")) {
-    const cliente = clientes[index];
-    console.log("Excluindo cliente com ID:", cliente.id); // debug
+    async function excluirCliente(id){
+  if (!confirm("Tem certeza que deseja excluir este cliente?")) return;
 
-    try {
-      const res = await fetch(`/api/clientes?id=${cliente.id}`, { method: "DELETE" });
-      const data = await res.json();
+  console.log("Excluindo cliente com ID:", id);
 
-      if (!res.ok) throw new Error(data.error || "Erro ao excluir cliente");
+  try {
+    const res = await fetch(`/api/clientes?id=${id}`, {
+      method: "DELETE"
+    });
 
-      // Remove pelo ID, não pelo índice
-      clientes = clientes.filter(c => c.id !== cliente.id);
-      renderTabela();
-    } catch (err) {
-      alert("Erro ao excluir cliente: " + err.message);
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.error || "Erro ao excluir cliente");
     }
+
+    // remove da lista local
+    clientes = clientes.filter(c => c.id !== id);
+    renderTabela();
+
+    alert("Cliente excluído com sucesso!");
+  } catch (err) {
+    alert("Erro ao excluir cliente: " + err.message);
   }
 }
-
     buscarCliente.addEventListener("input", renderTabela);
     thElements.forEach(th => {
       th.addEventListener("click", () => {
