@@ -91,14 +91,14 @@ function renderTabela(lista){
   let totalGeral = 0;
   const clientesTotais = {};
 
-  // --- Renderizar vendas individuais ---
   lista.forEach(venda => {
-    const totalVenda = parseFloat(venda.total || 0);
+    // Calcular total da venda a partir dos produtos
+    const totalVenda = (venda.produtos || []).reduce((sum, p) => sum + (p.preco * p.quantidade), 0);
     const desconto = parseFloat(venda.desconto || 0);
     const totalFinal = totalVenda - desconto;
     totalGeral += totalFinal;
 
-    // Soma por cliente
+    // Somar por cliente
     if(!clientesTotais[venda.cliente]){
       clientesTotais[venda.cliente] = { total: 0, desconto: 0 };
     }
@@ -125,7 +125,7 @@ function renderTabela(lista){
     tbody.appendChild(tr);
   });
 
-  // --- Renderizar resumo por cliente ---
+  // Resumo por cliente
   const resumoHeader = document.createElement("tr");
   resumoHeader.innerHTML = `<td colspan="7" style="background:#dbe9f7;font-weight:bold;text-align:center;">Resumo por Cliente</td>`;
   tbody.appendChild(resumoHeader);
@@ -144,7 +144,6 @@ function renderTabela(lista){
     tbody.appendChild(tr);
   });
 
-  // --- Atualizar total geral ---
   document.getElementById("totalGeral").textContent = totalGeral.toFixed(2);
 }
 
