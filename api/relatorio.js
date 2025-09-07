@@ -13,16 +13,16 @@ async function query(sql, params = []) {
 }
 
 export default async function handler(req, res) {
-  const { method, query } = req;
+  const { method, query: q } = req;
 
   if (method !== "GET") {
     return res.status(405).json({ error: "Método não permitido" });
   }
 
-  const { dataInicio, dataFim, cliente, produto } = query;
+  const { dataInicio, dataFim, cliente, produto } = q;
 
   try {
-    // ---------------- Buscando vendas com JOIN ----------------
+    // Buscar vendas com JOIN
     let vendas = await query(`
       SELECT v.id as venda_id, v.data, c.nome as cliente
       FROM vendas v
@@ -33,30 +33,41 @@ export default async function handler(req, res) {
       ORDER BY v.data DESC
     `, [dataInicio || null, dataFim || null, cliente || null]);
 
-    // ---------------- Buscando produtos de cada venda ----------------
     const relatorio = [];
+
     for (let venda of vendas) {
-      let produtos = await query(`
-        SELECT p.descricao, vp.tamanho, vp.quantidade, vp.subtotal
-        FROM venda_produtos vp
-        LEFT JOIN produtos p ON vp.produto_id = p.id
-        WHERE vp.venda_id = $1
-        ${produto ? "AND LOWER(p.descricao) LIKE '%' || LOWER($2) || '%'" : ""}
-      `, produto ? [venda.venda_id, produto] : [venda.venda_id]);
+      let produtosQuery = `
+        SELECT p.descricao, vi.tamanho, vi.quantidade, vi.preco
+        FROM vendas_itens vi
+        LEFT JOIN produtos p ON vi.produto_id = p.id
+        WHERE vi.venda_id = $1
+      `;
+
+      const params = [venda.venda_id];
+
+      if (produto) {
+        produtosQuery += ` AND LOWER(p.descricao) LIKE '%' || LOWER($2) || '%'`;
+        params.push(produto);
+      }
+
+      let produtos = await query(produtosQuery, params);
+
+      produtos = produtos.map(p => ({
+        descricao: p.descricao || '-',
+        tamanho: p.tamanho || '-',
+        quantidade: p.quantidade || 0,
+        subtotal: (p.quantidade || 0) * (p.preco || 0)
+      }));
 
       relatorio.push({
         data: venda.data ? venda.data.toISOString().split('T')[0] : '',
         cliente: venda.cliente || 'Cliente não encontrado',
-        produtos: produtos.map(p => ({
-          descricao: p.descricao || '-',
-          tamanho: p.tamanho || '-',
-          quantidade: p.quantidade || 0,
-          subtotal: p.subtotal || 0
-        }))
+        produtos
       });
     }
 
     return res.status(200).json(relatorio);
+
   } catch (err) {
     console.error("Erro na API de vendas:", err.message);
     return res.status(500).json({ error: "Erro interno no servidor" });
