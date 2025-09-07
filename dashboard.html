@@ -89,13 +89,21 @@ function renderTabela(lista){
   tbody.innerHTML = "";
 
   let totalGeral = 0;
+  const clientesTotais = {};
 
   lista.forEach(venda => {
-    // Usar somente os valores salvos no banco
+    // Usar os valores salvos na venda
     const totalVenda = parseFloat(venda.total) || 0;
     const desconto = parseFloat(venda.desconto) || 0;
-    const totalFinal = parseFloat(venda.total_final) || 0;
+    const totalFinal = parseFloat(venda.total_final) || (totalVenda - desconto);
     totalGeral += totalFinal;
+
+    // Somar por cliente
+    if(!clientesTotais[venda.cliente]){
+      clientesTotais[venda.cliente] = { total: 0, desconto: 0 };
+    }
+    clientesTotais[venda.cliente].total += totalFinal;
+    clientesTotais[venda.cliente].desconto += desconto;
 
     // Montar string de produtos
     const produtosStr = (venda.produtos || [])
@@ -118,7 +126,27 @@ function renderTabela(lista){
     tbody.appendChild(tr);
   });
 
-  // Atualizar total geral
+  // --- Resumo por cliente ---
+  if(Object.keys(clientesTotais).length > 0){
+    const resumoHeader = document.createElement("tr");
+    resumoHeader.innerHTML = `<td colspan="7" style="background:#dbe9f7;font-weight:bold;text-align:center;">Resumo por Cliente</td>`;
+    tbody.appendChild(resumoHeader);
+
+    Object.keys(clientesTotais).forEach(cliente => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>-</td>
+        <td>${cliente}</td>
+        <td>-</td>
+        <td>R$ ${(clientesTotais[cliente].total + clientesTotais[cliente].desconto).toFixed(2)}</td>
+        <td>R$ ${clientesTotais[cliente].desconto.toFixed(2)}</td>
+        <td>R$ ${clientesTotais[cliente].total.toFixed(2)}</td>
+        <td>-</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
   document.getElementById("totalGeral").textContent = totalGeral.toFixed(2);
 }
 
