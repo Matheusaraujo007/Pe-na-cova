@@ -69,7 +69,7 @@ export default async function handler(req, res) {
       }
 
       // 3️⃣ Se for fiado, cria conta a receber
-      if (forma_pagamento.toLowerCase() === "fiado") {
+      if (forma_pagamento.toLowerCase() === "consignado") {
         await query(
           "INSERT INTO contasareceber (cliente_id, valor, status, data_vencimento) VALUES ($1,$2,$3, NOW() + INTERVAL '30 days')",
           [cliente_id, total, "Pendente"]
