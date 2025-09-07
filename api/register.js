@@ -3,7 +3,7 @@ import bcrypt from 'bcrypt';
 const { Pool } = pkg;
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL, // coloque a URL do Neon no Vercel
+  connectionString: process.env.DATABASE_URL_CUSTOM, // coloque a URL do Neon no Vercel
   ssl: { rejectUnauthorized: false }
 });
 
