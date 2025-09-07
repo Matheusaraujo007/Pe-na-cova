@@ -53,8 +53,6 @@ tr:hover { background: #e9f3fa; }
         <th>Data</th>
         <th>Cliente</th>
         <th>Produtos</th>
-        <th>Total</th>
-        <th>Desconto</th>
         <th>Total Final</th>
         <th>Ações</th>
       </tr>
@@ -92,8 +90,6 @@ function renderTabela(lista){
   const clientesTotais = {};
 
   lista.forEach(venda => {
-    const total = parseFloat(venda.total) || 0;          // Total bruto da venda
-    const desconto = parseFloat(venda.desconto) || 0;    // Valor do desconto aplicado
     const totalFinal = total - desconto;                 // Total final da venda
     totalGeral += totalFinal;
 
