@@ -126,28 +126,37 @@ function renderTabela(lista){
     tbody.appendChild(tr);
   });
 
+ 
   // --- Resumo por cliente ---
-  if(Object.keys(clientesTotais).length > 0){
-    const resumoHeader = document.createElement("tr");
-    resumoHeader.innerHTML = `<td colspan="7" style="background:#dbe9f7;font-weight:bold;text-align:center;">Resumo por Cliente</td>`;
-    tbody.appendChild(resumoHeader);
+if(Object.keys(clientesTotais).length > 0){
+  const resumoHeader = document.createElement("tr");
+  resumoHeader.innerHTML = `<td colspan="7" style="background:#dbe9f7;font-weight:bold;text-align:center;">Resumo por Cliente</td>`;
+  tbody.appendChild(resumoHeader);
 
-    Object.keys(clientesTotais).forEach(cliente => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>-</td>
-        <td>${cliente}</td>
-        <td>-</td>
-        <td>R$ ${(clientesTotais[cliente].total + clientesTotais[cliente].desconto).toFixed(2)}</td>
-        <td>R$ ${clientesTotais[cliente].desconto.toFixed(2)}</td>
-        <td>R$ ${clientesTotais[cliente].total.toFixed(2)}</td>
-        <td>-</td>
-      `;
-      tbody.appendChild(tr);
-    });
-  }
+  Object.keys(clientesTotais).forEach(cliente => {
+    const tr = document.createElement("tr");
+    // Aqui mostramos o total real das vendas e o desconto separado
+    const totalVendasCliente = lista
+      .filter(v => v.cliente === cliente)
+      .reduce((sum, v) => sum + (parseFloat(v.total) || 0), 0);
 
-  document.getElementById("totalGeral").textContent = totalGeral.toFixed(2);
+    const totalDescontoCliente = lista
+      .filter(v => v.cliente === cliente)
+      .reduce((sum, v) => sum + (parseFloat(v.desconto) || 0), 0);
+
+    const totalFinalCliente = totalVendasCliente - totalDescontoCliente;
+
+    tr.innerHTML = `
+      <td>-</td>
+      <td>${cliente}</td>
+      <td>-</td>
+      <td>R$ ${totalVendasCliente.toFixed(2)}</td>
+      <td>R$ ${totalDescontoCliente.toFixed(2)}</td>
+      <td>R$ ${totalFinalCliente.toFixed(2)}</td>
+      <td>-</td>
+    `;
+    tbody.appendChild(tr);
+  });
 }
 
 // --- Filtros ---
