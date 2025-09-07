@@ -26,59 +26,42 @@
   <label>Valor Total:</label>
   <input type="text" id="valorTotal" disabled>
 
-  <label>Desconto (%):</label>
-  <input type="number" id="desconto" min="0" max="100" value="0">
-
   <label for="formaPagamento">Forma de Pagamento:</label>
   <select id="formaPagamento">
     <option value="dinheiro">Dinheiro</option>
     <option value="pix">Pix</option>
     <option value="debito">Cartão de Débito</option>
     <option value="credito">Cartão de Crédito</option>
-    <option value="fiado">Consignado</option>
+    <option value="fiado">Fiado</option>
   </select>
 
-  <button class="btn" id="btnFinalizar">Finalizar</button>
+  <button class="btn" onclick="finalizarRecebimento()">Finalizar</button>
 </div>
 
 <script>
 const { jsPDF } = window.jspdf;
 
 // Recupera dados do PDV
-let venda = JSON.parse(localStorage.getItem("vendaAtual")) || null;
+let venda = JSON.parse(localStorage.getItem("vendaAtual"));
 let carrinho = JSON.parse(localStorage.getItem("carrinhoAtual")) || [];
 
-if(venda) {
-  document.getElementById("cliente").value = venda.cliente;
-  document.getElementById("valorTotal").value = venda.total.toFixed(2);
-}
+document.getElementById("cliente").value = venda?.cliente || "";
+document.getElementById("valorTotal").value = venda?.total.toFixed(2) || "0.00";
 
-// Atualiza valor total ao digitar desconto
-document.getElementById("desconto").addEventListener("input", () => {
-  const desconto = parseFloat(document.getElementById("desconto").value) || 0;
-  const totalComDesconto = venda.total * (1 - desconto / 100);
-  document.getElementById("valorTotal").value = totalComDesconto.toFixed(2);
-});
-
-document.getElementById("btnFinalizar").addEventListener("click", async () => {
-  if(!venda || carrinho.length === 0) { 
-    alert("Nenhuma venda em andamento ou carrinho vazio!"); 
-    return; 
-  }
-
+async function finalizarRecebimento(){
+  if(!venda) { alert("Nenhuma venda em andamento!"); return; }
   const forma = document.getElementById("formaPagamento").value;
-  const desconto = parseFloat(document.getElementById("desconto").value) || 0;
-  const totalComDesconto = venda.total * (1 - desconto / 100);
 
   try {
     // Prepara itens para enviar para API
     const itensAPI = carrinho.map(item => ({
-      produto_id: item.produto_id,
+      produto_id: item.id,
       quantidade: item.quantidade,
       preco: item.preco,
       tamanho: item.tamanho
     }));
 
+    // Chama API para salvar venda
     const res = await fetch("/api/recebimentos", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -86,30 +69,30 @@ document.getElementById("btnFinalizar").addEventListener("click", async () => {
         cliente_id: venda.cliente_id,
         itens: itensAPI,
         forma_pagamento: forma,
-        total: totalComDesconto,
-        desconto: desconto
+        total: venda.total
       })
     });
 
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Erro ao finalizar venda");
 
-    alert("Venda finalizada e estoque atualizado com sucesso!");
+    alert("Venda finalizada com sucesso!");
 
-    gerarPDF(totalComDesconto, desconto);
-    
+    // Gera PDF da nota e redireciona automaticamente
+    gerarPDF();
+
     // Limpa localStorage
     localStorage.removeItem("vendaAtual");
     localStorage.removeItem("carrinhoAtual");
 
   } catch (err) {
-    console.error(err);
-    alert("Erro ao finalizar venda: " + err.message);
+    alert("Erro: " + err.message);
   }
-});
+}
 
-function gerarPDF(totalComDesconto, desconto){
+function gerarPDF(){
   const doc = new jsPDF();
+
   doc.setFontSize(18);
   doc.setTextColor(47,127,179);
   doc.text("💰 Nota de Venda", 105, 20, {align: "center"});
@@ -129,23 +112,22 @@ function gerarPDF(totalComDesconto, desconto){
   doc.setFont(undefined, "normal");
 
   startY += 7;
-  carrinho.forEach(item => {
-    if(startY > 280) { doc.addPage(); startY = 20; }
+  carrinho.forEach(item=>{
     doc.text(item.descricao, 20, startY);
     doc.text(item.tamanho, 70, startY);
     doc.text(item.quantidade.toString(), 100, startY);
-    doc.text("R$ " + item.preco.toFixed(2), 120, startY);
-    doc.text("R$ " + item.subtotal.toFixed(2), 150, startY);
+    doc.text("R$ "+item.preco.toFixed(2), 120, startY);
+    doc.text("R$ "+item.subtotal.toFixed(2), 150, startY);
     startY += 7;
   });
 
   doc.setFont(undefined, "bold");
-  if(desconto > 0){
-    doc.text(`Desconto: ${desconto.toFixed(2)}%`, 20, startY+10);
-  }
-  doc.text(`Total (com desconto): R$ ${totalComDesconto.toFixed(2)}`, 150, startY+10);
+  doc.text(`Total: R$ ${venda.total.toFixed(2)}`, 150, startY+10);
 
+  // Salva PDF
   doc.save(`nota_${venda.cliente}_${Date.now()}.pdf`);
+
+  // Redireciona automaticamente para PDV
   window.location.href = "vendas.html";
 }
 </script>
