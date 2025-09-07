@@ -71,16 +71,13 @@ tr:hover { background: #e9f3fa; }
 <script>
 let vendas = [];
 
-// --- Buscar vendas finalizadas do banco via API ---
+// --- Buscar vendas do banco via API ---
 async function buscarVendas() {
   try {
     const res = await fetch("/api/relatorio"); // Busca todas as vendas
     if (!res.ok) throw new Error("Erro ao buscar vendas do servidor");
     vendas = await res.json();
-
-    // Filtrar apenas vendas finalizadas
-    const vendasFinalizadas = vendas.filter(v => v.status === "finalizada"); // ou v.finalizada === true
-    renderTabela(vendasFinalizadas);
+    renderTabela(vendas);
   } catch (err) {
     alert(err.message);
   }
@@ -95,7 +92,7 @@ function renderTabela(lista){
   const clientesTotais = {};
 
   lista.forEach(venda => {
-    // Valores da venda já finalizada
+    // Usar os valores salvos na venda
     const totalVenda = parseFloat(venda.total) || 0;
     const desconto = parseFloat(venda.desconto) || 0;
     const totalFinal = parseFloat(venda.total_final) || (totalVenda - desconto);
@@ -150,7 +147,6 @@ function renderTabela(lista){
     });
   }
 
-  // --- Atualizar total geral ---
   document.getElementById("totalGeral").textContent = totalGeral.toFixed(2);
 }
 
@@ -160,15 +156,13 @@ document.getElementById("btnFiltrar").addEventListener("click", ()=>{
   const cliente = document.getElementById("filtroCliente").value.toLowerCase();
   const produto = document.getElementById("filtroProduto").value.toLowerCase();
 
-  const filtradas = vendas
-    .filter(v => v.status === "finalizada") // só finalizadas
-    .filter(v => {
-      let cond = true;
-      if(data) cond = cond && v.data===data;
-      if(cliente) cond = cond && v.cliente.toLowerCase().includes(cliente);
-      if(produto) cond = cond && (v.produtos || []).some(p=>p.descricao.toLowerCase().includes(produto));
-      return cond;
-    });
+  const filtradas = vendas.filter(v=>{
+    let cond = true;
+    if(data) cond = cond && v.data===data;
+    if(cliente) cond = cond && v.cliente.toLowerCase().includes(cliente);
+    if(produto) cond = cond && (v.produtos || []).some(p=>p.descricao.toLowerCase().includes(produto));
+    return cond;
+  });
   renderTabela(filtradas);
 });
 
@@ -177,7 +171,7 @@ document.getElementById("btnLimpar").addEventListener("click", ()=>{
   document.getElementById("filtroData").value = "";
   document.getElementById("filtroCliente").value = "";
   document.getElementById("filtroProduto").value = "";
-  renderTabela(vendas.filter(v => v.status === "finalizada"));
+  renderTabela(vendas);
 });
 
 // --- Inicializar ---
