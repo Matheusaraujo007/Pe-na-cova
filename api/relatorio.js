@@ -14,11 +14,12 @@ async function executarQuery(sql, params = []) {
 }
 
 export default async function handler(req, res) {
-  const { method, query } = req;
+  const { method } = req;
+  const { dataInicio, dataFim, cliente, produto } = req.query;
 
-  if (method !== "GET") return res.status(405).json({ error: "Método não permitido" });
-
-  const { dataInicio, dataFim, cliente, produto } = query;
+  if (method !== "GET") {
+    return res.status(405).json({ error: "Método não permitido" });
+  }
 
   try {
     // Buscar vendas
@@ -56,7 +57,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json(relatorio);
   } catch (err) {
-    console.error("Erro na API de vendas:", err.message);
+    console.error("Erro na API de relatório:", err);
     return res.status(500).json({ error: "Erro interno no servidor" });
   }
 }
