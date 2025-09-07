@@ -191,11 +191,13 @@ async function cadastrar() {
       body: JSON.stringify({ usuario, senha })
     });
 
+    // Tenta ler o JSON, se falhar lê como texto para debug
     let data;
     try {
       data = await response.json();
     } catch {
-      console.error("Resposta não é JSON:", await response.text());
+      const text = await response.text();
+      console.error("Resposta não é JSON:", text);
       alert("Erro inesperado do servidor");
       return;
     }
