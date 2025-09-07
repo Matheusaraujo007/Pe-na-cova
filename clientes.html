@@ -118,31 +118,42 @@
     }
 
     async function salvarCliente(cliente) {
-      try {
-        const res = await fetch("/api/clientes", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(cliente)
-        });
-        if (!res.ok) {
-          const errorData = await res.json();
-          throw new Error(errorData.error || "Erro ao salvar cliente");
-        }
-        const data = await res.json();
-        // Se estiver editando, substitui o cliente
-        if (editIndex !== null) {
-          clientes[editIndex] = data;
-          editIndex = null;
-        } else {
-          clientes.unshift(data); // adiciona no início
-        }
-        renderTabela();
-        form.reset();
-      } catch (err) {
-        console.error(err);
-        alert("Erro ao salvar cliente: " + err.message);
-      }
+  try {
+    let res;
+    if (editIndex !== null) {
+      const id = clientes[editIndex].id;
+      res = await fetch(`/api/clientes?id=${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(cliente)
+      });
+    } else {
+      res = await fetch("/api/clientes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(cliente)
+      });
     }
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.error || "Erro ao salvar cliente");
+    }
+
+    const data = await res.json();
+    if (editIndex !== null) {
+      clientes[editIndex] = data;
+      editIndex = null;
+    } else {
+      clientes.unshift(data);
+    }
+
+    renderTabela();
+    form.reset();
+  } catch (err) {
+    alert("Erro ao salvar cliente: " + err.message);
+  }
+}
 
     // ------------------ RENDER TABELA ------------------
     function renderTabela() {
@@ -208,13 +219,22 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    function excluirCliente(index){
-      if(confirm("Deseja realmente excluir este cliente?")){
-        // DELETE na API futuramente
-        clientes.splice(index,1);
-        renderTabela();
-      }
+    async function excluirCliente(index) {
+  if (confirm("Deseja realmente excluir este cliente?")) {
+    const cliente = clientes[index];
+    try {
+      const res = await fetch(`/api/clientes?id=${cliente.id}`, {
+        method: "DELETE"
+      });
+      if (!res.ok) throw new Error("Erro ao excluir cliente");
+
+      clientes.splice(index, 1); // remove localmente
+      renderTabela();
+    } catch (err) {
+      alert("Erro ao excluir cliente: " + err.message);
     }
+  }
+}
 
     buscarCliente.addEventListener("input", renderTabela);
     thElements.forEach(th => {
