@@ -185,9 +185,9 @@ async function cadastrar() {
   }
 
   try {
-    const response = await fetch('/api/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const response = await fetch("/api/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ usuario, senha })
     });
 
@@ -195,13 +195,13 @@ async function cadastrar() {
 
     if (response.ok) {
       alert(data.message);
-      window.location.href = "index.html";
+      window.location.href = "index.html"; // vai para login
     } else {
       alert(data.error);
     }
   } catch (err) {
-    console.error(err);
-    alert("Erro ao tentar cadastrar!");
+    console.error("Erro ao cadastrar:", err);
+    alert("Erro ao cadastrar usuário");
   }
 }
 </script>
