@@ -71,7 +71,7 @@ tr:hover { background: #e9f3fa; }
 <script>
 let vendas = [];
 
-// --- Buscar vendas do banco via API ---
+// --- Buscar vendas finalizadas do banco via API ---
 async function buscarVendas() {
   try {
     const res = await fetch("/api/relatorio"); // Busca todas as vendas
@@ -79,7 +79,7 @@ async function buscarVendas() {
     vendas = await res.json();
 
     // Filtrar apenas vendas finalizadas
-    const vendasFinalizadas = vendas.filter(v => v.status === "finalizada");
+    const vendasFinalizadas = vendas.filter(v => v.status === "finalizada"); // ou v.finalizada === true
     renderTabela(vendasFinalizadas);
   } catch (err) {
     alert(err.message);
@@ -95,6 +95,7 @@ function renderTabela(lista){
   const clientesTotais = {};
 
   lista.forEach(venda => {
+    // Valores da venda já finalizada
     const totalVenda = parseFloat(venda.total) || 0;
     const desconto = parseFloat(venda.desconto) || 0;
     const totalFinal = parseFloat(venda.total_final) || (totalVenda - desconto);
@@ -107,10 +108,12 @@ function renderTabela(lista){
     clientesTotais[venda.cliente].total += totalFinal;
     clientesTotais[venda.cliente].desconto += desconto;
 
+    // Montar string de produtos
     const produtosStr = (venda.produtos || [])
       .map(p => `${p.descricao} (${p.tamanho}) x${p.quantidade}`)
       .join(", ");
 
+    // Criar linha da venda
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${venda.data}</td>
@@ -147,6 +150,7 @@ function renderTabela(lista){
     });
   }
 
+  // --- Atualizar total geral ---
   document.getElementById("totalGeral").textContent = totalGeral.toFixed(2);
 }
 
@@ -157,15 +161,14 @@ document.getElementById("btnFiltrar").addEventListener("click", ()=>{
   const produto = document.getElementById("filtroProduto").value.toLowerCase();
 
   const filtradas = vendas
-    .filter(v => v.status === "finalizada") // apenas finalizadas
+    .filter(v => v.status === "finalizada") // só finalizadas
     .filter(v => {
       let cond = true;
-      if(data) cond = cond && v.data === data;
+      if(data) cond = cond && v.data===data;
       if(cliente) cond = cond && v.cliente.toLowerCase().includes(cliente);
-      if(produto) cond = cond && (v.produtos || []).some(p => p.descricao.toLowerCase().includes(produto));
+      if(produto) cond = cond && (v.produtos || []).some(p=>p.descricao.toLowerCase().includes(produto));
       return cond;
     });
-
   renderTabela(filtradas);
 });
 
@@ -174,8 +177,6 @@ document.getElementById("btnLimpar").addEventListener("click", ()=>{
   document.getElementById("filtroData").value = "";
   document.getElementById("filtroCliente").value = "";
   document.getElementById("filtroProduto").value = "";
-  
-  // Mostrar todas as finalizadas
   renderTabela(vendas.filter(v => v.status === "finalizada"));
 });
 
