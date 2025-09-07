@@ -1,9 +1,10 @@
 import { Pool } from "pg";
 import bcrypt from "bcrypt";
 
+// Conexão com o Neon (Vercel)
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
+  ssl: { rejectUnauthorized: false } // necessário para Neon
 });
 
 export default async function handler(req, res) {
@@ -18,16 +19,20 @@ export default async function handler(req, res) {
   }
 
   try {
+    // Criptografa a senha
     const hash = await bcrypt.hash(senha, 10);
 
+    // Insere no banco de dados
     const result = await pool.query(
       "INSERT INTO usuarios (nome, senha) VALUES ($1, $2) RETURNING id, nome",
       [usuario, hash]
     );
 
-    res.status(200).json({ message: "Usuário cadastrado!", user: result.rows[0] });
+    return res.status(200).json({ message: "Usuário cadastrado com sucesso!", user: result.rows[0] });
   } catch (err) {
     console.error("Erro ao cadastrar usuário:", err);
-    res.status(500).json({ error: "Erro ao cadastrar usuário" });
+
+    // Mensagem mais detalhada para debug no Vercel
+    return res.status(500).json({ error: "Erro ao cadastrar usuário no banco de dados" });
   }
 }
