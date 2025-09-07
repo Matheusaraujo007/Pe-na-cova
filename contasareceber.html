@@ -37,6 +37,11 @@
   </div>
 
   <script>
+      // Verificar se o usuario esta logado
+  if (sessionStorage.getItem('isLoggedIn') !== 'true'){
+    window.location.href = 'index.html'; // Redirecionar para login
+  }
+  
     const API_BASE = "/api"; // Ajuste se necessário
 
     async function carregarFiados() {

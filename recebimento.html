@@ -39,6 +39,11 @@
 </div>
 
 <script>
+    // Verificar se o usuario esta logado
+  if (sessionStorage.getItem('isLoggedIn') !== 'true'){
+    window.location.href = 'index.html'; // Redirecionar para login
+  }
+  
 const { jsPDF } = window.jspdf;
 
 // Recupera dados do PDV

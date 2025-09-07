@@ -91,6 +91,10 @@
   </div>
 
   <script>
+      // Verificar se o usuario esta logado
+  if (sessionStorage.getItem('isLoggedIn') !== 'true'){
+    window.location.href = 'index.html'; // Redirecionar para login
+  }
     const form = document.getElementById("formCliente");
     const tabela = document.querySelector("#tabelaClientes tbody");
     const buscarCliente = document.getElementById("buscarCliente");

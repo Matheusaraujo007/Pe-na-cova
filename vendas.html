@@ -251,6 +251,10 @@ tr:hover {
 <div class="alert" id="alertBox"></div>
 
 <script>
+    // Verificar se o usuario esta logado
+  if (sessionStorage.getItem('isLoggedIn') !== 'true'){
+    window.location.href = 'index.html'; // Redirecionar para login
+  }
 let estoque = [];
 let clientes = [];
 let carrinho = [];
@@ -375,7 +379,7 @@ document.getElementById("finalizarVenda").addEventListener("click", ()=>{
   localStorage.setItem("vendaAtual", JSON.stringify(vendaAtual));
   localStorage.setItem("carrinhoAtual", JSON.stringify(carrinho));
   // Redireciona para tela de Recebimento
-  window.location.href = "recebimento.html"; // ajuste o nome do arquivo
+  window.location.href = "recebimentos.html"; // ajuste o nome do arquivo
 });
 
 // ---------- Modal Cliente ----------

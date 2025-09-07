@@ -80,6 +80,10 @@
 <div class="back"><a href="painel.html">⬅ Voltar ao Painel</a></div>
 
 <script>
+    // Verificar se o usuario esta logado
+  if (sessionStorage.getItem('isLoggedIn') !== 'true'){
+    window.location.href = 'index.html'; // Redirecionar para login
+  }
 const form = document.getElementById("formProduto");
 const tabela = document.querySelector("#tabelaEstoque tbody");
 const buscarProduto = document.getElementById("buscarProduto");
