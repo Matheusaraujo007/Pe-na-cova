@@ -61,7 +61,7 @@ async function finalizarRecebimento(){
       tamanho: item.tamanho
     }));
 
-    // Chama API para salvar venda
+    // 👉 Chama apenas a API de recebimentos (ela já faz a baixa no estoque)
     const res = await fetch("/api/recebimentos", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -76,10 +76,9 @@ async function finalizarRecebimento(){
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Erro ao finalizar venda");
 
-    alert("Venda finalizada com sucesso!");
+    alert("Venda finalizada e estoque atualizado com sucesso!");
 
-    // Gera PDF da nota e redireciona automaticamente
-    gerarPDF();
+    gerarPDF(); // Gera a nota fiscal/recibo
 
     // Limpa localStorage
     localStorage.removeItem("vendaAtual");
@@ -89,6 +88,7 @@ async function finalizarRecebimento(){
     alert("Erro: " + err.message);
   }
 }
+
 
 function gerarPDF(){
   const doc = new jsPDF();
