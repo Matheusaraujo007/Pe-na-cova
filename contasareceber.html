@@ -45,15 +45,15 @@
       const res = await fetch(`${API_BASE}/contasareceber`);
       if (!res.ok) throw new Error("Erro ao buscar contas a receber");
 
-      const consignados = await res.json(); // variável em minúsculo
+      const consignado = await res.json(); // variável em minúsculo
 
-      if (consignados.length === 0) {
+      if (consignado.length === 0) {
         tabela.innerHTML = `<tr><td colspan="5">Nenhum consignado pendente</td></tr>`;
         return;
       }
 
       tabela.innerHTML = "";
-      consignados.forEach((c) => {
+      consignado.forEach((c) => {
         const row = document.createElement("tr");
 
         row.innerHTML = `
