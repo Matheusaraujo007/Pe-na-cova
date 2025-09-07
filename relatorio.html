@@ -57,6 +57,7 @@ tr:hover { background: #e9f3fa; }
       <tr>
         <th>Data</th>
         <th>Cliente</th>
+        <th>Desconto (%)</th>
         <th>Produto</th>
         <th>Tamanho</th>
         <th>Quantidade</th>
@@ -129,6 +130,7 @@ function gerarRelatorio() {
       tr.innerHTML = `
         <td>${venda.data || '-'}</td>
         <td>${venda.cliente || '-'}</td>
+        <td>${venda.desconto.toFixed(2)}%</td> <!-- mostra o desconto -->
         <td>${p.descricao || '-'}</td>
         <td>${p.tamanho || '-'}</td>
         <td>${p.quantidade || 0}</td>
