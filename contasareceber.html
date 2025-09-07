@@ -92,7 +92,7 @@
       try {
         const res = await fetch(`${API_BASE}/contasareceber/${id}`, { method: "DELETE" });
         if (!res.ok) throw new Error("Erro ao remover conta");
-        carregarFiados();
+        carregarConsignado();
       } catch (err) {
         alert(err.message);
       }
