@@ -7,10 +7,18 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false },
 });
 
-// Função auxiliar
+// 🔹 Função auxiliar para executar query
 async function executarQuery(sql, params = []) {
   const result = await pool.query(sql, params);
   return result.rows;
+}
+
+// 🔹 Ajuste de data para UTC-3 (Brasília)
+function formatarDataBrasilia(data) {
+  if (!data) return '';
+  const dt = new Date(data);
+  dt.setHours(dt.getHours() - 3); // Ajuste para UTC-3
+  return dt.toISOString().split('T')[0];
 }
 
 export default async function handler(req, res) {
@@ -22,69 +30,42 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Monta query dinâmica para vendas
-    let queryText = `
+    // 🔹 Buscar vendas
+    let vendas = await executarQuery(`
       SELECT v.id as venda_id, v.data, c.nome as cliente
       FROM vendas v
       LEFT JOIN clientes c ON v.cliente_id = c.id
-      WHERE 1=1
-    `;
-    const params = [];
-    let paramIndex = 1;
+      WHERE ($1 IS NULL OR v.data >= $1)
+        AND ($2 IS NULL OR v.data <= $2)
+        AND ($3 IS NULL OR LOWER(c.nome) LIKE '%' || LOWER($3) || '%')
+      ORDER BY v.data DESC
+    `, [dataInicio || null, dataFim || null, cliente || null]);
 
-    if (dataInicio) {
-      queryText += ` AND v.data >= $${paramIndex}`;
-      params.push(dataInicio);
-      paramIndex++;
-    }
-
-    if (dataFim) {
-      queryText += ` AND v.data <= $${paramIndex}`;
-      params.push(dataFim);
-      paramIndex++;
-    }
-
-    if (cliente) {
-      queryText += ` AND LOWER(c.nome) LIKE '%' || LOWER($${paramIndex}) || '%'`;
-      params.push(cliente);
-      paramIndex++;
-    }
-
-    queryText += " ORDER BY v.data DESC";
-
-    const vendas = await executarQuery(queryText, params);
-
-    // Buscar produtos de cada venda
     const relatorio = [];
+
     for (let venda of vendas) {
-      let produtosQuery = `
-        SELECT p.descricao, vp.tamanho, vp.quantidade, vp.preco, (vp.quantidade * vp.preco) AS subtotal
+      let produtos = await executarQuery(`
+        SELECT p.descricao, vp.tamanho, vp.quantidade, vp.subtotal
         FROM vendas_itens vp
         LEFT JOIN produtos p ON vp.produto_id = p.id
         WHERE vp.venda_id = $1
-      `;
-      const produtosParams = [venda.venda_id];
-
-      if (produto) {
-        produtosQuery += ` AND LOWER(p.descricao) LIKE '%' || LOWER($2) || '%'`;
-        produtosParams.push(produto);
-      }
-
-      const produtos = await executarQuery(produtosQuery, produtosParams);
+        ${produto ? "AND LOWER(p.descricao) LIKE '%' || LOWER($2) || '%'" : ""}
+      `, produto ? [venda.venda_id, produto] : [venda.venda_id]);
 
       relatorio.push({
-        data: venda.data ? venda.data.toISOString().split("T")[0] : "",
-        cliente: venda.cliente || "Cliente não encontrado",
+        data: formatarDataBrasilia(venda.data),
+        cliente: venda.cliente || 'Cliente não encontrado',
         produtos: produtos.map(p => ({
-          descricao: p.descricao || "-",
-          tamanho: p.tamanho || "-",
+          descricao: p.descricao || '-',
+          tamanho: p.tamanho || '-',
           quantidade: p.quantidade || 0,
-          subtotal: Number(p.subtotal) || 0
+          subtotal: Number(p.subtotal) || 0  // garantir number para toFixed
         }))
       });
     }
 
     return res.status(200).json(relatorio);
+
   } catch (err) {
     console.error("Erro na API de relatório:", err);
     return res.status(500).json({ error: "Erro interno no servidor" });
