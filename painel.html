@@ -143,9 +143,10 @@
 
 <script>
   // Verificar se o usuario esta logado
-  if (sessionStorage.getItem('isLoggedIn') !== 'true'){
+  sessionStorage.setItem('isLoggedIn', 'true');{
     window.location.href = 'index.html'; // Redirecionar para login
   }
+
 function sair() {
   // Redireciona para a tela de login
   window.location.href = "index.html";
