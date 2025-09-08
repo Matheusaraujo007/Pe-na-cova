@@ -50,7 +50,21 @@
   .main {
     flex: 1;
     padding: 20px;
+    position: relative;
   }
+  .main::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 400px;   /* Ajuste do tamanho da logo */
+  height: 400px;
+  background: url('logo.png') no-repeat center center;
+  background-size: contain;
+  opacity: 0.08;  /* Transparência (marca d’água) */
+  transform: translate(-50%, -50%);
+  pointer-events: none; /* garante que não atrapalhe os cliques */
+}
   .topbar {
     display: flex;
     justify-content: space-between;
