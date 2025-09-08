@@ -51,9 +51,10 @@
   flex: 1;
   padding: 20px;
 
-  /* Fundo com logo */
+  /* Fundo centralizado */
   background: url('logo.png') no-repeat center center;
-  background-size: cover;   /* cobre toda a área */
+  background-size: contain; /* mantém a proporção da logo */
+  background-attachment: fixed; /* opcional: mantém a logo fixa */
 }
   .topbar {
     display: flex;
