@@ -60,11 +60,11 @@ async function finalizarRecebimento(){
   try {
     // Prepara itens para enviar para API
     const itensAPI = carrinho.map(item => ({
-      produto_id: item.id,
-      quantidade: item.quantidade,
-      preco: item.preco,
-      tamanho: item.tamanho
-    }));
+  produto_id: item.produto_id, // usa o id certo do banco
+  quantidade: item.quantidade,
+  preco: item.preco,
+  tamanho: item.tamanho
+}));
 
     // Chama API para salvar venda
     const res = await fetch("/api/recebimentos", {
