@@ -73,6 +73,7 @@ tr:hover { background: #e9f3fa; }
   if (sessionStorage.getItem('isLoggedIn') !== 'true'){
     window.location.href = 'index.html'; // Redirecionar para login
   }
+
 let vendas = [];
 
 // --- Buscar vendas do banco via API ---
@@ -176,6 +177,28 @@ document.getElementById("btnLimpar").addEventListener("click", ()=>{
   document.getElementById("filtroProduto").value = "";
   renderTabela(vendas);
 });
+
+async function cancelarVenda(vendaId) {
+  if(!confirm("Deseja realmente cancelar esta venda? Isso irá devolver os produtos ao estoque.")) return;
+
+  try {
+    const res = await fetch(`/api/cancelarVenda`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ venda_id: vendaId })
+    });
+
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error || "Erro ao cancelar venda");
+
+    alert("Venda cancelada com sucesso!");
+    buscarVendas(); // Atualiza a tabela
+  } catch(err) {
+    console.error(err);
+    alert("Erro: " + err.message);
+  }
+}
+
 
 // --- Inicializar ---
 buscarVendas();
