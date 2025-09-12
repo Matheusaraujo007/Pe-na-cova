@@ -185,7 +185,7 @@ async function cancelarVenda(vendaId) {
     const res = await fetch(`/api/cancelarVenda`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ venda_id: vendaId })
+      body: JSON.stringify({ id: vendaId })
     });
 
     const data = await res.json();
@@ -206,3 +206,4 @@ buscarVendas();
 
 </body>
 </html>
+
