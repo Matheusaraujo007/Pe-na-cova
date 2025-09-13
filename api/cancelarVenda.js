@@ -9,8 +9,9 @@ const pool = new Pool({
 export default async function handler(req, res) {
   if(req.method !== "POST") return res.status(405).json({ error: "Método não permitido" });
 
-  const { venda_id } = req.body;
-  if(!venda_id) return res.status(400).json({ error: "ID da venda não informado" });
+  const { venda_id, id } = req.body;
+const vendaId = venda_id || id;
+if(!vendaId) return res.status(400).json({ error: "ID da venda não informado" });
 
   const client = await pool.connect();
 
@@ -46,3 +47,4 @@ export default async function handler(req, res) {
     client.release();
   }
 }
+
