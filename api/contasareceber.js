@@ -1,4 +1,3 @@
-// api/contasareceber.js
 import pkg from "pg";
 const { Pool } = pkg;
 
@@ -7,18 +6,17 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false },
 });
 
-// Função auxiliar para queries
+// Função auxiliar
 async function query(sql, params = []) {
-  const result = await pool.query(sql, params); // usamos pool.query direto
-  return result;
+  return pool.query(sql, params);
 }
 
-// Handler principal
 export default async function handler(req, res) {
-  const { method, body } = req;
+  const { method, body, query: queryParams } = req;
 
   try {
-    // ---------------- GET: Listar todas as contas ----------------
+
+    // -------- GET --------
     if (method === "GET") {
       const result = await query(`
         SELECT 
@@ -34,37 +32,56 @@ export default async function handler(req, res) {
       return res.status(200).json(result.rows);
     }
 
-    // ---------------- POST: Criar nova conta ----------------
+    // -------- POST --------
     if (method === "POST") {
       const { cliente_id, valor, status } = body;
+
       if (!cliente_id || valor == null) {
         return res.status(400).json({ error: "Cliente e valor são obrigatórios" });
       }
 
       const result = await query(
-        "INSERT INTO contasareceber (cliente_id, valor, status, data) VALUES ($1,$2,$3,NOW()) RETURNING *",
+        `INSERT INTO contasareceber (cliente_id, valor, status, data)
+         VALUES ($1,$2,$3,NOW()) RETURNING *`,
         [cliente_id, valor, status || "Pendente"]
       );
+
       return res.status(201).json(result.rows[0]);
     }
 
-    // ---------------- PUT: Atualizar status ----------------
+    // -------- PUT --------
     if (method === "PUT") {
       const { id, status } = body;
+
       if (!id || !status) {
         return res.status(400).json({ error: "ID e status são obrigatórios" });
       }
+
       const result = await query(
         "UPDATE contasareceber SET status = $1 WHERE id = $2 RETURNING *",
         [status, id]
       );
+
       return res.status(200).json(result.rows[0]);
     }
 
-    // ---------------- Método não permitido ----------------
+    // -------- DELETE (🔥 FALTAVA ESSE) --------
+    if (method === "DELETE") {
+      const { id } = queryParams;
+
+      if (!id) {
+        return res.status(400).json({ error: "ID é obrigatório" });
+      }
+
+      await query("DELETE FROM contasareceber WHERE id = $1", [id]);
+
+      return res.status(200).json({ success: true });
+    }
+
     return res.status(405).json({ error: "Método não permitido" });
+
   } catch (err) {
-    console.error("Erro na API de contas a receber:", err.message, err.stack);
+    console.error("Erro na API:", err);
     return res.status(500).json({ error: "Erro interno no servidor" });
   }
 }
