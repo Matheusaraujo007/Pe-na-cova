@@ -179,23 +179,27 @@ document.getElementById("btnLimpar").addEventListener("click", ()=>{
 });
 
 async function cancelarVenda(vendaId) {
-  if(!confirm("Deseja realmente cancelar esta venda? Isso irá devolver os produtos ao estoque.")) return;
+  if (!vendaId) {
+    alert("ID da venda inválido");
+    return;
+  }
+
+  if (!confirm("Deseja realmente cancelar esta venda?")) return;
 
   try {
-    const res = await fetch(`/api/cancelarVenda`, {
+    const res = await fetch("/api/cancelarVenda", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: vendaId })
+      body: JSON.stringify({ venda_id: vendaId })
     });
 
     const data = await res.json();
-    if(!res.ok) throw new Error(data.error || "Erro ao cancelar venda");
+    if (!res.ok) throw new Error(data.error);
 
     alert("Venda cancelada com sucesso!");
-    buscarVendas(); // Atualiza a tabela
-  } catch(err) {
-    console.error(err);
-    alert("Erro: " + err.message);
+    buscarVendas();
+  } catch (err) {
+    alert(err.message);
   }
 }
 
