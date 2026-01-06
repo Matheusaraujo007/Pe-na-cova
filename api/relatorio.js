@@ -32,7 +32,8 @@ export default async function handler(req, res) {
         v.desconto
       FROM vendas v
       LEFT JOIN clientes c ON v.cliente_id = c.id
-      WHERE 1=1
+      WHERE v.cancelada = false
+
     `;
     const params = [];
     let paramIndex = 1;
