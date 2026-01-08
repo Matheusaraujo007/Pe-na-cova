@@ -80,14 +80,15 @@ tr:hover { background: #e9f3fa; }
   <div style="background:#fff; padding:20px; border-radius:12px; width:400px;">
     <h3>🔄 Trocar Itens da Venda</h3>
 
-    <label>Nova descrição do produto</label>
-    <input type="text" id="novoProduto" style="width:100%; padding:8px; margin-bottom:10px;">
+    <label>Produto</label>
+<select id="produtoSelect" style="width:100%; padding:8px; margin-bottom:10px;"></select>
 
-    <label>Quantidade</label>
-    <input type="number" id="novaQtd" min="1" style="width:100%; padding:8px; margin-bottom:10px;">
+<label>Quantidade</label>
+<input type="number" id="novaQtd" min="1" style="width:100%; padding:8px; margin-bottom:10px;">
 
-    <label>Valor</label>
-    <input type="number" id="novoValor" step="0.01" style="width:100%; padding:8px; margin-bottom:10px;">
+<label>Valor</label>
+<input type="number" id="novoValor" step="0.01" style="width:100%; padding:8px; margin-bottom:10px;">
+
 
     <div style="display:flex; gap:10px; justify-content:flex-end;">
       <button onclick="fecharTroca()">Cancelar</button>
@@ -104,6 +105,53 @@ tr:hover { background: #e9f3fa; }
   }
 
 let vendas = [];
+
+async function confirmarTroca() {
+  const index = document.getElementById("produtoSelect").value;
+
+  if (index === "") {
+    alert("Selecione um produto");
+    return;
+  }
+
+  const itemOriginal = itensVendaAtual[index];
+
+  const quantidade = Number(document.getElementById("novaQtd").value);
+  const preco = Number(document.getElementById("novoValor").value);
+
+  if (!quantidade || !preco) {
+    alert("Preencha quantidade e valor");
+    return;
+  }
+
+  try {
+    const res = await fetch("/api/trocarItensVenda", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        venda_id: vendaTrocaId,
+        itens: [
+          {
+            produto_id: itemOriginal.produto_id,
+            tamanho: itemOriginal.tamanho,
+            quantidade,
+            preco
+          }
+        ]
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Erro na troca");
+
+    alert("Itens trocados com sucesso!");
+    fecharTroca();
+    buscarVendas();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
 
 // --- Buscar vendas do banco via API ---
 async function buscarVendas() {
@@ -153,7 +201,7 @@ function renderTabela(lista){
       <td>R$ ${desconto.toFixed(2)}</td>
       <td>R$ ${totalFinal.toFixed(2)}</td>
       <td>
-        <button class="action-btn troca-btn" onclick="abrirTroca(${venda.venda_id})">Trocar Itens</button>
+        <button class="action-btn troca-btn" onclick='abrirTroca(${JSON.stringify(venda)})'>Trocar Itens</button>
         <button class="action-btn remove-btn" onclick="cancelarVenda(${venda.venda_id})">Cancelar</button>
       </td>
     `;
@@ -233,62 +281,50 @@ async function cancelarVenda(vendaId) {
   }
 }
 
-let vendaTrocaId = null;
 
-function abrirTroca(vendaId){
-  vendaTrocaId = vendaId;
+
+let vendaTrocaId = null;
+let itensVendaAtual = [];
+document.getElementById("produtoSelect").addEventListener("change", function () {
+  const index = this.value;
+  if (index === "") return;
+
+  const item = itensVendaAtual[index];
+  document.getElementById("novaQtd").value = item.quantidade;
+  document.getElementById("novoValor").value = item.preco;
+});
+
+
+function abrirTroca(venda) {
+
+  vendaTrocaId = venda.venda_id;
+  itensVendaAtual = venda.produtos || [];
+
+  const select = document.getElementById("produtoSelect");
+  select.innerHTML = `<option value="">Selecione o produto</option>`;
+
+  itensVendaAtual.forEach((p, index) => {
+    const opt = document.createElement("option");
+    opt.value = index; // usamos o índice
+    opt.textContent = `${p.descricao} (${p.tamanho})`;
+    select.appendChild(opt);
+  });
+
+  // limpar campos
+  document.getElementById("novaQtd").value = "";
+  document.getElementById("novoValor").value = "";
+
   document.getElementById("modalTroca").style.display = "flex";
 }
 
-function fecharTroca(){
+function fecharTroca() {
   vendaTrocaId = null;
+  itensVendaAtual = [];
+  document.getElementById("produtoSelect").innerHTML = "";
   document.getElementById("modalTroca").style.display = "none";
 }
 
-async function confirmarTroca() {
-  if (!vendaTrocaId) {
-    alert("Venda inválida");
-    return;
-  }
 
-  // Exemplo simples (depois podemos melhorar)
-  const produtoId = document.getElementById("produtoSelect").value;
-  const tamanho = document.getElementById("tamanhoSelect").value;
-  const quantidade = Number(document.getElementById("novaQtd").value);
-  const preco = Number(document.getElementById("novoValor").value);
-
-  if (!produtoId || !quantidade || !preco) {
-    alert("Preencha todos os campos");
-    return;
-  }
-
-  try {
-    const res = await fetch("/api/trocarItensVenda", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        venda_id: vendaTrocaId,
-        itens: [
-          {
-            produto_id: produtoId,
-            tamanho,
-            quantidade,
-            preco
-          }
-        ]
-      })
-    });
-
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Erro na troca");
-
-    alert("Itens trocados com sucesso!");
-    fecharTroca();
-    buscarVendas(); // recarrega a tabela
-  } catch (err) {
-    alert(err.message);
-  }
-}
 
 
 
