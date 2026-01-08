@@ -22,22 +22,27 @@ export default async function handler(req, res) {
   try {
     await client.query("BEGIN");
 
-    // 1️⃣ Buscar itens da venda
+    // 1️⃣ Buscar itens da venda (somente se não estiver cancelada)
     const { rows: itens } = await client.query(
       `
-      SELECT produto_id, quantidade
-      FROM vendas_itens
-      WHERE venda_id = $1
+      SELECT vi.produto_id, vi.quantidade
+      FROM vendas_itens vi
+      JOIN vendas v ON v.id = vi.venda_id
+      WHERE vi.venda_id = $1 AND v.cancelada = false
       `,
       [venda_id]
     );
 
-    // 2️⃣ Devolver itens para o estoque
+    if (itens.length === 0) {
+      throw new Error("Venda já cancelada ou sem itens");
+    }
+
+    // 2️⃣ Devolver estoque (USANDO A COLUNA CORRETA)
     for (const item of itens) {
       await client.query(
         `
         UPDATE produtos
-        SET estoque = estoque + $1
+        SET quantidade = quantidade + $1
         WHERE id = $2
         `,
         [item.quantidade, item.produto_id]
@@ -49,7 +54,7 @@ export default async function handler(req, res) {
       `
       UPDATE vendas
       SET cancelada = true
-      WHERE id = $1
+      WHERE id = $1 AND cancelada = false
       `,
       [venda_id]
     );
@@ -63,8 +68,8 @@ export default async function handler(req, res) {
 
   } catch (err) {
     await client.query("ROLLBACK");
-    console.error("Erro ao cancelar venda:", err);
-    return res.status(500).json({ error: "Erro ao cancelar venda" });
+    console.error("Erro ao cancelar venda:", err.message);
+    return res.status(500).json({ error: err.message });
   } finally {
     client.release();
   }
