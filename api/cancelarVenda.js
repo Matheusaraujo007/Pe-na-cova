@@ -22,59 +22,49 @@ export default async function handler(req, res) {
   try {
     await client.query("BEGIN");
 
-    // 1️⃣ Verifica se a venda existe
-    const venda = await client.query(
-      "SELECT id FROM vendas WHERE id = $1",
+    // 1️⃣ Buscar itens da venda
+    const { rows: itens } = await client.query(
+      `
+      SELECT produto_id, quantidade
+      FROM vendas_itens
+      WHERE venda_id = $1
+      `,
       [venda_id]
     );
 
-    if (venda.rowCount === 0) {
-      throw new Error("Venda não encontrada");
-    }
-
-    // 2️⃣ Buscar itens da venda
-    const itens = await client.query(
-      "SELECT produto_id, quantidade FROM vendas_itens WHERE venda_id = $1",
-      [venda_id]
-    );
-
-    // 3️⃣ Devolver estoque (se houver itens)
-    for (const item of itens.rows) {
+    // 2️⃣ Devolver itens para o estoque
+    for (const item of itens) {
       await client.query(
-        "UPDATE produtos SET estoque = estoque + $1 WHERE id = $2",
+        `
+        UPDATE produtos
+        SET estoque = estoque + $1
+        WHERE id = $2
+        `,
         [item.quantidade, item.produto_id]
       );
     }
 
-    // 4️⃣ Remover itens da venda
+    // 3️⃣ Marcar venda como cancelada
     await client.query(
-      "DELETE FROM vendas_itens WHERE venda_id = $1",
-      [venda_id]
-    );
-
-    // 5️⃣ Remover venda
-    await client.query(
-      "DELETE FROM vendas WHERE id = $1",
+      `
+      UPDATE vendas
+      SET cancelada = true
+      WHERE id = $1
+      `,
       [venda_id]
     );
 
     await client.query("COMMIT");
 
-    return res.status(200).json({ message: "Venda cancelada com sucesso" });
+    return res.status(200).json({
+      success: true,
+      message: "Venda cancelada e estoque devolvido com sucesso",
+    });
 
   } catch (err) {
     await client.query("ROLLBACK");
-
-    console.error("ERRO AO CANCELAR VENDA:", {
-      venda_id,
-      message: err.message,
-      stack: err.stack
-    });
-
-    return res.status(500).json({
-      error: err.message || "Erro ao cancelar venda"
-    });
-
+    console.error("Erro ao cancelar venda:", err);
+    return res.status(500).json({ error: "Erro ao cancelar venda" });
   } finally {
     client.release();
   }
