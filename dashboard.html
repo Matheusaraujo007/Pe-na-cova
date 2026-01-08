@@ -32,6 +32,14 @@ tr:hover { background: #e9f3fa; }
 .back { text-align: center; margin-top: 20px; }
 .back a { color: var(--primary); text-decoration: none; font-size: 15px; font-weight: bold; }
 .back a:hover { text-decoration: underline; }
+
+.troca-btn {
+  background: #f59e0b;
+}
+.troca-btn:hover {
+  background: #d97706;
+}
+
 </style>
 </head>
 <body>
@@ -67,6 +75,27 @@ tr:hover { background: #e9f3fa; }
 </div>
 
 <div class="back"><a href="painel.html">⬅ Voltar ao Painel</a></div>
+
+<div id="modalTroca" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
+  <div style="background:#fff; padding:20px; border-radius:12px; width:400px;">
+    <h3>🔄 Trocar Itens da Venda</h3>
+
+    <label>Nova descrição do produto</label>
+    <input type="text" id="novoProduto" style="width:100%; padding:8px; margin-bottom:10px;">
+
+    <label>Quantidade</label>
+    <input type="number" id="novaQtd" min="1" style="width:100%; padding:8px; margin-bottom:10px;">
+
+    <label>Valor</label>
+    <input type="number" id="novoValor" step="0.01" style="width:100%; padding:8px; margin-bottom:10px;">
+
+    <div style="display:flex; gap:10px; justify-content:flex-end;">
+      <button onclick="fecharTroca()">Cancelar</button>
+      <button class="troca-btn" onclick="confirmarTroca()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
 
 <script>
     // Verificar se o usuario esta logado
@@ -124,6 +153,7 @@ function renderTabela(lista){
       <td>R$ ${desconto.toFixed(2)}</td>
       <td>R$ ${totalFinal.toFixed(2)}</td>
       <td>
+        <button class="action-btn troca-btn" onclick="abrirTroca(${venda.venda_id})">Trocar Itens</button>
         <button class="action-btn remove-btn" onclick="cancelarVenda(${venda.venda_id})">Cancelar</button>
       </td>
     `;
@@ -202,6 +232,64 @@ async function cancelarVenda(vendaId) {
     alert(err.message);
   }
 }
+
+let vendaTrocaId = null;
+
+function abrirTroca(vendaId){
+  vendaTrocaId = vendaId;
+  document.getElementById("modalTroca").style.display = "flex";
+}
+
+function fecharTroca(){
+  vendaTrocaId = null;
+  document.getElementById("modalTroca").style.display = "none";
+}
+
+async function confirmarTroca() {
+  if (!vendaTrocaId) {
+    alert("Venda inválida");
+    return;
+  }
+
+  // Exemplo simples (depois podemos melhorar)
+  const produtoId = document.getElementById("produtoSelect").value;
+  const tamanho = document.getElementById("tamanhoSelect").value;
+  const quantidade = Number(document.getElementById("novaQtd").value);
+  const preco = Number(document.getElementById("novoValor").value);
+
+  if (!produtoId || !quantidade || !preco) {
+    alert("Preencha todos os campos");
+    return;
+  }
+
+  try {
+    const res = await fetch("/api/trocarItensVenda", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        venda_id: vendaTrocaId,
+        itens: [
+          {
+            produto_id: produtoId,
+            tamanho,
+            quantidade,
+            preco
+          }
+        ]
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Erro na troca");
+
+    alert("Itens trocados com sucesso!");
+    fecharTroca();
+    buscarVendas(); // recarrega a tabela
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
 
 
 // --- Inicializar ---
